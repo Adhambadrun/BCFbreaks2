@@ -359,12 +359,16 @@ async function main() {
   check("requests page surfaces policy rules (45-day swap, $100 No Show)", requestsPage.body.includes("45 days") && requestsPage.body.includes("$100"), "policy text missing");
 
   // ----------------------------------------------------------------------
-  console.log("\n== 10. Branding & assets (logo on tab + gates) ==");
+  console.log("\n== 10. Branding & assets (logo on tab + gates, title, quote) ==");
   const logoRes = await fetch(`${BASE}/logo.png`);
   check("/logo.png serves as an image", logoRes.status === 200 && (logoRes.headers.get("content-type") ?? "").startsWith("image/"), logoRes.headers.get("content-type"));
   const devDash = await get("/", dev);
   check("browser tab icons point at /logo.png", devDash.body.includes('href="/logo.png"'), "missing icon metadata");
-  check("nav bar carries the brand logo", devDash.body.includes("BCFBreaks Logo"));
+  check("browser tab title is BCF Time Management", devDash.body.includes("<title>BCF Time Management</title>"), "title mismatch");
+  check("nav bar carries the brand logo", devDash.body.includes("BCF Logo"));
+  const gatedPage = await get("/approvals", agent); // agents hit the access gate here
+  const gatedBody = gatedPage.body.replace(/<!-- -->/g, "");
+  check("access gate renders the Jim Rohn quote", gatedBody.includes("Time is more valuable than money") && gatedBody.includes("Jim Rohn"), "quote missing");
 
   // ----------------------------------------------------------------------
   console.log("\n== 11. Cleanup test artifacts ==");

@@ -2,9 +2,10 @@ import Link from "next/link";
 import BrandLogo from "./BrandLogo";
 
 /**
- * Access verification gate — the branded modal shown when a surface requires
- * an authenticated/authorized session. Carries the official BCFbreaks logo
- * (never a generic warning shield icon).
+ * Access verification gate — the branded login/verification modal shown when a
+ * surface requires an authenticated or authorized session. Carries the
+ * official BCFbreaks logo (never a generic warning shield icon) and the
+ * company's time-management motto.
  */
 export default function AccessGate({
   title,
@@ -37,6 +38,16 @@ export default function AccessGate({
             ← Back to console
           </Link>
         )}
+
+        <blockquote className="mt-4 w-full max-w-md rounded-2xl border border-amber-500/25 bg-gradient-to-br from-amber-500/[0.08] to-transparent p-4">
+          <p className="text-[13px] italic leading-relaxed text-amber-100/90">
+            &ldquo;Time is more valuable than money. You can get more money, but you cannot get
+            more time.&rdquo;
+          </p>
+          <footer className="mt-2 text-[11px] font-semibold uppercase tracking-wider text-amber-400/80">
+            — Jim Rohn
+          </footer>
+        </blockquote>
       </div>
     </div>
   );

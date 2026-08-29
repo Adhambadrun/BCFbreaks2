@@ -163,13 +163,17 @@ check("email: dispatches to attendance.cai@bcflights.com", dispatcher.includes("
 check("email: dispatch API exists", existsSync(path.join(ROOT, "src", "app", "api", "email", "dispatch", "route.ts")), true);
 check("email: dispatch API targets attendance mailbox", readFileSync(path.join(ROOT, "src", "app", "api", "email", "dispatch", "route.ts"), "utf8").includes("attendance.cai@bcflights.com"), true);
 
-// Branding: logo on tab icons + access gates (never shield icons).
+// Branding: logo on tab icons + access gates (never shield icons) + tab title + login quote.
 const layout = readFileSync(path.join(ROOT, "src", "app", "layout.tsx"), "utf8");
 check("branding: layout icons point at /logo.png", layout.includes('"/logo.png"'), true);
 check("branding: /public/logo.png exists", existsSync(path.join(ROOT, "public", "logo.png")), true);
+check("branding: tab title is BCF Time Management (default)", layout.includes('"BCF Time Management"'), true);
+check("branding: tab title template keeps base title on all routes", layout.includes("%s — BCF Time Management"), true);
 const accessGate = readFileSync(path.join(ROOT, "src", "components", "AccessGate.tsx"), "utf8");
 check("branding: access gate uses the brand logo", accessGate.includes('/logo.png') || accessGate.includes("BrandLogo"), true);
 check("branding: access gate has no shield emoji/icon", !accessGate.includes("🛡"), true);
+check("branding: login quote (Jim Rohn) on the access gate", accessGate.includes("Time is more valuable than money") && accessGate.includes("Jim Rohn"), true);
+check("branding: logo rendered unclipped (square-safe)", readFileSync(path.join(ROOT, "src", "components", "BrandLogo.tsx"), "utf8").includes("rounded-xl"), true);
 check("latency: clarification card component exists", existsSync(path.join(ROOT, "src", "components", "LatencyClarificationCard.tsx")), true);
 check("latency: approvals page exists", existsSync(path.join(ROOT, "src", "app", "approvals", "page.tsx")), true);
 check("latency: clarification submit API exists", existsSync(path.join(ROOT, "src", "app", "api", "attendance", "clarification", "route.ts")), true);

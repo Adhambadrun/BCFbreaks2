@@ -3,7 +3,12 @@ import { Auth0Provider } from "@auth0/nextjs-auth0/client";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "BCFBreaks — Team Breaks & Shift Management",
+  title: {
+    // Browser tab title — "BCF Time Management" is the base title on every
+    // route (nested pages inherit the template if they ever set their own).
+    default: "BCF Time Management",
+    template: "%s — BCF Time Management",
+  },
   description: "Live production team break, attendance and shift management system",
   icons: {
     icon: "/logo.png",
