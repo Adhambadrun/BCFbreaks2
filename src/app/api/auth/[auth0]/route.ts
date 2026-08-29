@@ -26,8 +26,44 @@ export const dynamic = "force-dynamic";
  */
 export const runtime = "nodejs";
 
+/**
+ * Human-readable failure shape for configuration errors. When the Auth0 env
+ * vars are absent (or malformed), the SDK throws a typed `SdkError` subclass
+ * (e.g. `DomainResolutionError`, code `domain_resolution_error`) from inside
+ * `auth0.middleware()`. Left unhandled that becomes Next's blank 500 — the
+ * production "white screen". We catch it, log the full detail server-side, and
+ * return readable JSON pointing at the public diagnostic endpoint.
+ */
+function toReadableAuthError(error: unknown): { code: string; message: string } {
+  if (error instanceof Error) {
+    const rawCode = (error as { code?: unknown }).code;
+    const code = typeof rawCode === "string" && rawCode.length > 0 ? rawCode : "auth_middleware_error";
+    const cause = error.cause instanceof Error ? ` — ${error.cause.message}` : "";
+    return { code, message: `${error.message}${cause}` };
+  }
+  return { code: "auth_middleware_error", message: String(error) };
+}
+
 async function handler(request: NextRequest): Promise<NextResponse> {
-  return auth0.middleware(request);
+  try {
+    return await auth0.middleware(request);
+  } catch (error) {
+    // Configuration/runtime failure inside the SDK (missing or invalid env
+    // vars, unreachable tenant, …). Log everything for Vercel logs, but keep
+    // the response readable — never a blank page.
+    console.error("[api/auth] auth0.middleware failed:", error);
+    const { code, message } = toReadableAuthError(error);
+    return NextResponse.json(
+      {
+        error: "authentication_is_misconfigured",
+        code,
+        message,
+        hint: "This deployment's Auth0 configuration is missing or invalid. GET /api/public/config (public, no session required) reports which environment variables are missing — names only, no values — plus the Allowed Callback / Logout URLs that must be registered on the Auth0 application.",
+        diagnosticsUrl: "/api/public/config",
+      },
+      { status: 500, headers: { "cache-control": "no-store" } },
+    );
+  }
 }
 
 export { handler as GET, handler as POST };
