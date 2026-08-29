@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getEffectiveUser } from "@/lib/session";
 import { getTeamAttendanceStatus } from "@/lib/attendance";
+import AccessGate from "@/components/AccessGate";
 import NavBar from "@/components/NavBar";
 import TeamCard, { type TeamCardData } from "@/components/TeamCard";
 
@@ -18,12 +19,17 @@ export default async function TeamPage() {
     return (
       <div className="min-h-screen bg-[#060812]">
         <NavBar user={user} impersonating={impersonating} />
-        <main className="mx-auto max-w-3xl px-6 py-16 text-center">
-          <h1 className="text-xl font-bold text-white">Team views require a staff account</h1>
-          <p className="mt-2 text-sm text-slate-400">
-            Preview access is restricted. Sign in with a <span className="font-mono">@bcflights.com</span>{" "}
-            account to see team rosters and shift status.
-          </p>
+        <main className="mx-auto max-w-3xl px-6 py-16">
+          <AccessGate
+            title="Team views require a staff account"
+            message={
+              <>
+                Preview access is restricted. Sign in with a{" "}
+                <span className="font-mono">@bcflights.com</span> account to see team rosters and
+                shift status.
+              </>
+            }
+          />
         </main>
       </div>
     );
@@ -76,15 +82,15 @@ export default async function TeamPage() {
       return (
         <div className="min-h-screen bg-[#060812]">
           <NavBar user={user} impersonating={impersonating} />
-          <main className="mx-auto max-w-3xl px-6 py-16 text-center">
-            <h1 className="text-xl font-bold text-white">
-              {user.role === "SUPERVISOR" ? "No team assigned yet" : "Not on a team yet"}
-            </h1>
-            <p className="mt-2 text-sm text-slate-400">
-              {user.role === "SUPERVISOR"
-                ? "An Administrator or the Developer will assign your team shortly."
-                : "Ask your supervisor or an administrator to add you to a team."}
-            </p>
+          <main className="mx-auto max-w-3xl px-6 py-16">
+            <AccessGate
+              title={user.role === "SUPERVISOR" ? "No team assigned yet" : "Not on a team yet"}
+              message={
+                user.role === "SUPERVISOR"
+                  ? "An Administrator or the Developer will assign your team shortly."
+                  : "Ask your supervisor or an administrator to add you to a team."
+              }
+            />
           </main>
         </div>
       );
