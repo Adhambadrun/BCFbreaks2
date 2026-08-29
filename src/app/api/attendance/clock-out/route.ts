@@ -3,6 +3,13 @@ import { getSessionUser } from "@/lib/session";
 import { clockOutUserWithPolicy } from "@/lib/attendance";
 
 /**
+ * Never prerender or statically optimize this route (AGENT_INSTRUCTIONS.md §5):
+ * it reads live session/database state, and keeping it dynamic also stops
+ * `next build` from importing it into the static-generation worker.
+ */
+export const dynamic = "force-dynamic";
+
+/**
  * Records the official Shift End / Clock-Out timestamp for the REAL signed-in
  * user, then the client proceeds to /api/auth/logout.
  *

@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth0 } from "@/lib/auth0";
 
 /**
+ * Never prerender or statically optimize this route (AGENT_INSTRUCTIONS.md §5):
+ * it reads live session/database state, and keeping it dynamic also stops
+ * `next build` from importing it into the static-generation worker.
+ */
+export const dynamic = "force-dynamic";
+
+/**
  * Auth0 SDK route mount — serves every authentication endpoint under
  * `/api/auth/*` (login, logout, callback, profile, access-token,
  * backchannel-logout) by delegating to `auth0.middleware()`.

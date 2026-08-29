@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
 
+/**
+ * Never prerender or statically optimize this route (AGENT_INSTRUCTIONS.md §5):
+ * it reads live session/database state, and keeping it dynamic also stops
+ * `next build` from importing it into the static-generation worker.
+ */
+export const dynamic = "force-dynamic";
+
 const MAX_BYTES = 2 * 1024 * 1024; // 2 MB
 const ACCEPTED = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
 

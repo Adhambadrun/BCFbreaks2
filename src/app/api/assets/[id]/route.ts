@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
 /**
+ * Never prerender or statically optimize this route (AGENT_INSTRUCTIONS.md §5):
+ * it reads live session/database state, and keeping it dynamic also stops
+ * `next build` from importing it into the static-generation worker.
+ */
+export const dynamic = "force-dynamic";
+
+/**
  * GET /api/assets/[id] — serves a stored avatar / team logo straight from the
  * database (Asset.data). Middleware already guarantees the requester is
  * authenticated. IDs are unique per upload, so responses are immutable and can

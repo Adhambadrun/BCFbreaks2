@@ -5,6 +5,13 @@ import { IMPERSONATION_COOKIE, signImpersonation } from "@/lib/impersonation";
 import { normalizeEmail } from "@/lib/permissions";
 
 /**
+ * Never prerender or statically optimize this route (AGENT_INSTRUCTIONS.md §5):
+ * it reads live session/database state, and keeping it dynamic also stops
+ * `next build` from importing it into the static-generation worker.
+ */
+export const dynamic = "force-dynamic";
+
+/**
  * Developer-only impersonation endpoint.
  * POST   { email }  — start viewing the app as the given user
  * DELETE           — stop impersonating

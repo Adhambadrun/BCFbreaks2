@@ -3,6 +3,13 @@ import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
 import { evaluateLatency, LATENCY_LEEWAY_MINUTES } from "@/lib/policy";
 
+/**
+ * Never prerender or statically optimize this route (AGENT_INSTRUCTIONS.md §5):
+ * it reads live session/database state, and keeping it dynamic also stops
+ * `next build` from importing it into the static-generation worker.
+ */
+export const dynamic = "force-dynamic";
+
 export const runtime = "nodejs";
 
 /**
