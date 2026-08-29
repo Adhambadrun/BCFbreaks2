@@ -6,6 +6,7 @@
 
 import React, { useState } from 'react';
 import { AppProvider, useApp } from './AppContext';
+import { ErrorBoundary } from './ErrorBoundary';
 import { ShaderBackground } from './ShaderBackground';
 import { TopHeader } from './TopHeader';
 import { SNNTicker } from './SNNTicker';
@@ -131,8 +132,10 @@ const AppContent: React.FC = () => {
 
 export default function App() {
   return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <AppContent />
+      </AppProvider>
+    </ErrorBoundary>
   );
 }

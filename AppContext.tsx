@@ -64,6 +64,7 @@ interface AppContextType {
   loginAs: (email: string) => void;
   loginWithGoogle: () => Promise<void>;
   setUserDirectly: (user: User) => void;
+  simulateAccessAs: (user: User) => void;
   logout: () => void;
   setActiveTeamId: (teamId: string) => void;
   updateTeam: (teamId: string, updates: Partial<Team>) => void;
@@ -346,6 +347,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     playSound('click');
     addHeadline(`👋 ${user.name} authenticated via Google`, 'info', 'normal');
+  };
+
+  /**
+   * Switch the session to another user WITHOUT Google sign-in.
+   * Restricted to the developer account in production builds; open to anyone
+   * when running a dev build (vite dev) so the floor can be tested offline.
+   * Never opens an empty modal or locks the UI: pure state transition.
+   */
+  const simulateAccessAs = (user: User) => {
+    const isDevBuild = import.meta.env.DEV;
+    if (!isDevBuild && currentUser?.role !== 'developer') {
+      console.warn('[simulateAccessAs] Blocked: simulated access requires the developer role outside dev builds.');
+      return;
+    }
+    if (!user || !isEmailAllowedToLogin(user.email)) {
+      addHeadline(`🚫 Simulation denied: ${user?.email || 'unknown'} is not an authorized account`, 'warning', 'urgent');
+      return;
+    }
+    setUsers(prev => {
+      const idx = prev.findIndex(u => u.email.toLowerCase() === user.email.toLowerCase() || u.id === user.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = { ...next[idx], ...user };
+        return next;
+      }
+      return [user, ...prev];
+    });
+    setCurrentUser(user);
+    if (user.role !== 'admin' && user.role !== 'developer') {
+      setActiveTeamId(user.teamId);
+    }
+    playSound('click');
+    addHeadline(`🛠 Simulated session started as ${user.name} (${user.role})`, 'alert', 'normal');
   };
 
   const loginWithGoogle = async () => {
@@ -1052,6 +1086,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         loginAs,
         loginWithGoogle,
         setUserDirectly,
+        simulateAccessAs,
         logout,
         setActiveTeamId: handleSetActiveTeamId,
         updateTeam,
