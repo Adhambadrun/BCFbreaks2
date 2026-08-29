@@ -62,12 +62,14 @@ export default function AttendanceCard({
   const showLateBadge = latencyFlagged && lateMinutes > LATENCY_LEEWAY_MINUTES;
 
   return (
-    <div className="flex w-full flex-col gap-2 rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4">
+    <div className="liquid-glass--thin flex w-full flex-col gap-2 p-4">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-slate-300">Shift Attendance Status</span>
+        <span className="font-display text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-300">
+          Shift Attendance Status
+        </span>
         <span className="flex items-center gap-2">
           {showLateBadge && (
-            <span className="rounded-full border border-rose-400/30 bg-rose-400/10 px-2.5 py-0.5 text-xs font-bold text-rose-300">
+            <span className="glow-crimson rounded-full border border-rose-400/30 bg-rose-400/10 px-2.5 py-0.5 font-display text-[10px] font-bold uppercase tracking-wider text-rose-300">
               LATE +{lateMinutes}m
             </span>
           )}
@@ -77,7 +79,7 @@ export default function AttendanceCard({
               Attended &amp; Clocked In
             </span>
           ) : clockOutTime ? (
-            <span className="rounded-full border border-slate-400/20 bg-slate-400/10 px-2.5 py-0.5 text-xs font-semibold text-slate-300">
+            <span className="rounded-full border border-zinc-400/20 bg-zinc-400/10 px-2.5 py-0.5 text-xs font-semibold text-zinc-300">
               Clocked Out
             </span>
           ) : (
@@ -88,24 +90,25 @@ export default function AttendanceCard({
         </span>
       </div>
 
-      <div className="text-sm text-slate-200">
+      <div className="text-sm text-zinc-200">
         Login Shift Start:{" "}
-        <span className="font-mono font-semibold text-blue-400">{clockInTime ?? "Pending"}</span>
+        <span className="font-mono font-semibold text-cyan-300">{clockInTime ?? "Pending"}</span>
       </div>
 
       {onShift && elapsed && (
-        <div className="text-sm text-slate-200">
-          Time on shift: <span className="font-mono font-semibold text-emerald-400">{elapsed}</span>
+        <div className="text-sm text-zinc-200">
+          Time on shift:{" "}
+          <span className="font-mono font-semibold text-gold">{elapsed}</span>
         </div>
       )}
 
       {clockOutTime && (
-        <div className="text-sm text-slate-200">
+        <div className="text-sm text-zinc-200">
           Shift End / Clock-Out: <span className="font-mono font-semibold text-rose-400">{clockOutTime}</span>
         </div>
       )}
 
-      <p className="text-[11px] text-slate-400">
+      <p className="text-[11px] text-zinc-400">
         {impersonated
           ? "* Read-only impersonated view — the developer is observing this member's shift."
           : "* Signing out records your official departure timestamp and logs you off duty. A 15-minute company leeway applies to scheduled shift starts."}
