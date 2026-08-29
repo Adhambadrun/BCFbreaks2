@@ -90,6 +90,28 @@ approved, or the Vercel build fails.
 > When adding a new native/binary package, update **both** §2a and §2b before
 > committing.
 
+### 2c. npm v12 `allowScripts` (top-level, `pkg@version` keys)
+
+npm ≥11.16 warns (and npm v12 **blocks by default**) any dependency install
+script not covered by a **top-level `allowScripts` field in `package.json`**.
+This is a *different* allowlist from lavamoat's (§2a): npm reads a top-level
+`"allowScripts"` object keyed as `"package-name@version"`, not the
+`lavamoat.allowScripts` map keyed as `parent>child#version`.
+
+The Vercel build log surfaces it as:
+
+```
+npm warn allow-scripts 4 packages have install scripts not yet covered by allowScripts:
+npm warn allow-scripts   @prisma/engines@7.10.0 (postinstall: node scripts/postinstall.js)
+...
+npm warn allow-scripts Run `npm approve-scripts --allow-scripts-pending` to review, ...
+```
+
+**Enforcement:** keep the top-level `allowScripts` map in sync with §2a. When a
+package's version bumps (or a new scripted dep is added), update its
+`pkg@version` entry here too — otherwise npm v12 silently skips the script and
+the build/deploy breaks later at runtime. Do **not** delete the field.
+
 ---
 
 ## 3. Workflow protocol for dependency / build-script changes

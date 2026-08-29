@@ -63,7 +63,11 @@ Auth0 callback requirements — add these to the Auth0 application's **Allowed C
 **Allowed Logout URLs** (per environment):
 
 ```
+# local
 http://localhost:3000/api/auth/callback   http://localhost:3000
+
+# production
+https://bcflights.vercel.app/api/auth/callback   https://bcflights.vercel.app
 ```
 
 ### Environment variables (`.env.local`, gitignored — never commit credentials)
@@ -72,7 +76,7 @@ http://localhost:3000/api/auth/callback   http://localhost:3000
 |---|---|
 | `AUTH0_DOMAIN` / `AUTH0_CLIENT_ID` / `AUTH0_CLIENT_SECRET` | Tenant application credentials (development / staging / production sets are supplied by the platform secret store). |
 | `AUTH0_SECRET` | 32-byte hex secret that signs/encrypts the session cookie **and** the developer impersonation cookie. Rotate per environment. |
-| `APP_BASE_URL` | Absolute public origin (e.g. `http://localhost:3000`, or the Vercel URL). Must match an Allowed Callback/Logout URL. |
+| `APP_BASE_URL` | Absolute public origin (e.g. `http://localhost:3000` locally, or `https://bcflights.vercel.app` in production). Must match an Allowed Callback/Logout URL. |
 | `DATABASE_URL` | PostgreSQL connection string. |
 | `RESEND_API_KEY` (optional) | When set, `/api/email/dispatch` delivers request emails via the Resend HTTP API. When unset, dispatches are recorded on the persistent `RequestRecord` ledger. |
 | `RESEND_FROM` (optional) | From-address for delivered mail (default `BCFBreaks <onboarding@resend.dev>`); the agent's address is set as `reply_to`. |
