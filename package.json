@@ -55,5 +55,11 @@
       "prisma>@prisma/engines#7.10.0": true,
       "tsx>esbuild#0.28.2": true
     }
+  },
+  "allowScripts": {
+    "@embedded-postgres/linux-x64@17.10.0-beta.17": true,
+    "@prisma/engines@7.10.0": true,
+    "esbuild@0.28.2": true,
+    "prisma@7.10.0": true
   }
 }
