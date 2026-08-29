@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { GlassPanel } from '../shared/GlassPanel';
+import { GlassPanel } from './GlassPanel';
 import { Search, Globe, ExternalLink, Sparkles, Loader2, Plane, Clock, CloudSun, CheckCircle2, ChevronRight, X } from 'lucide-react';
-import { playSound } from '../../lib/sound';
+import { playSound } from './sound';
 
 interface SearchGroundingWidgetProps {
   isOpen: boolean;

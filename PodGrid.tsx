@@ -1,8 +1,8 @@
 import React from 'react';
-import { useApp } from '../../context/AppContext';
+import { useApp } from './AppContext';
 import { AgentPod } from './AgentPod';
 import { motion, AnimatePresence } from 'motion/react';
-import { GLIDE, SNAP } from '../../styles/motion-presets';
+import { GLIDE, SNAP } from './motion-presets';
 import { Clock, Coffee, ShieldAlert, Sparkles, UserCheck } from 'lucide-react';
 
 export const PodGrid: React.FC = () => {

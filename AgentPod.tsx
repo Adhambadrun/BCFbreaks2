@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { User, BreakRecord } from '../../types';
-import { useApp } from '../../context/AppContext';
+import { useApp } from './AppContext';
 import { motion, AnimatePresence } from 'motion/react';
-import { SNAP, GLIDE, COIN_FLIP_TRANSITION } from '../../styles/motion-presets';
+import { SNAP, GLIDE, COIN_FLIP_TRANSITION } from './motion-presets';
 import { Coffee, UtensilsCrossed, Phone, Gift, ShieldAlert, XCircle, AlertTriangle, Eye, Camera, UserX, CheckCircle, Flame } from 'lucide-react';
-import { playSound } from '../../lib/sound';
+import { playSound } from './sound';
 
 // Ultra-fast, high-tactile spring physics for instantaneous pod option popups
 const POD_POP_SPRING = {
@@ -877,6 +877,13 @@ export const AgentPod: React.FC<AgentPodProps> = ({
           <div className="font-orbitron font-bold text-[10px] text-crimson tracking-wider flex items-center justify-center gap-1 mt-0.5 animate-pulse">
             <ShieldAlert className="w-3 h-3" />
             <span>BREAKS BLOCKED</span>
+          </div>
+        ) : isOnBreak && isSuperOrAdminOrDev ? (
+          <div className="mt-1 w-full bg-red-950/80 border border-red-500 rounded text-center py-0.5 animate-pulse shadow-[0_0_10px_rgba(255,0,0,0.4)]">
+            <span className="font-orbitron font-extrabold text-sm sm:text-base text-red-400">
+              {formatTimer(isOvertime ? activeBreak.duration : remainingSeconds)}
+              {isOvertime && <span className="ml-1 text-[10px]">OT</span>}
+            </span>
           </div>
         ) : (!isAgentRole || isSelf) ? (
           <div className="font-teko text-base sm:text-lg text-yellow-400 leading-none">

@@ -1,6 +1,6 @@
 import React from 'react';
-import { useApp } from '../../context/AppContext';
-import { GlassPanel } from '../shared/GlassPanel';
+import { useApp } from './AppContext';
+import { GlassPanel } from './GlassPanel';
 import { Users, Clock, AlertTriangle, Award, HeartHandshake, FileText, CheckCircle2, Shield } from 'lucide-react';
 
 export const SupervisorDashboard: React.FC = () => {

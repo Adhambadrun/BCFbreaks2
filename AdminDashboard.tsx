@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useApp } from '../../context/AppContext';
-import { GlassPanel } from '../shared/GlassPanel';
+import { useApp } from './AppContext';
+import { GlassPanel } from './GlassPanel';
 import { Users, Clock, AlertTriangle, ShieldCheck, TrendingUp, Search, Plus, Radio, Award, AlertOctagon, UserPlus, Sliders } from 'lucide-react';
-import { playSound } from '../../lib/sound';
+import { playSound } from './sound';
 import { BreakEfficiencyChart } from './BreakEfficiencyChart';
 
 export const AdminDashboard: React.FC = () => {

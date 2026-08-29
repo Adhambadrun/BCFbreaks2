@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useApp } from '../../context/AppContext';
-import { GlassPanel } from '../shared/GlassPanel';
+import { useApp } from './AppContext';
+import { GlassPanel } from './GlassPanel';
 import { X, Search, Zap, AlertTriangle, Gift, Crown, AlertOctagon, Smile, Sun, Cake } from 'lucide-react';
 import { SNNHeadline } from '../../types';
 

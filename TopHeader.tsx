@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useApp } from '../../context/AppContext';
-import { GlassPanel } from '../shared/GlassPanel';
-import { RoleGuard } from '../shared/RoleGuard';
+import { useApp } from './AppContext';
+import { GlassPanel } from './GlassPanel';
+import { RoleGuard } from './RoleGuard';
 import { Clock, Users, Zap, ChevronDown, MessageSquare, CloudSun, Settings, Award, User, LogOut, Radio, Mic, Globe, Sparkles } from 'lucide-react';
-import { SNAP, GLIDE } from '../../styles/motion-presets';
+import { SNAP, GLIDE } from './motion-presets';
 import { motion, AnimatePresence } from 'motion/react';
-import { playSound } from '../../lib/sound';
+import { playSound } from './sound';
 
 export const TopHeader: React.FC = () => {
   const {
@@ -79,12 +79,12 @@ export const TopHeader: React.FC = () => {
         <div className="flex items-center gap-3 relative">
           <div
             className={`relative group ${
-              currentUser?.role === 'admin' || currentUser?.role === 'developer'
+              ['super', 'supervisor', 'admin', 'developer'].includes(currentUser?.role || '')
                 ? 'cursor-pointer'
                 : 'cursor-default'
             }`}
             onClick={() => {
-              if (currentUser?.role === 'admin' || currentUser?.role === 'developer') {
+              if (['super', 'supervisor', 'admin', 'developer'].includes(currentUser?.role || '')) {
                 setIsTeamSelectorOpen(!isTeamSelectorOpen);
               }
             }}
@@ -97,7 +97,7 @@ export const TopHeader: React.FC = () => {
                 referrerPolicy="no-referrer"
               />
             </div>
-            {(currentUser?.role === 'admin' || currentUser?.role === 'developer') && (
+            {(['super', 'supervisor', 'admin', 'developer'].includes(currentUser?.role || '')) && (
               <span className="absolute -bottom-1 -right-1 bg-yellow-400 text-black text-[9px] font-bold px-1 rounded-full border border-black" title="Switch or manage teams">
                 ▼
               </span>
@@ -112,7 +112,7 @@ export const TopHeader: React.FC = () => {
               <span className="text-[10px] font-orbitron px-2 py-0.5 rounded-full bg-zinc-800/80 border border-zinc-700 text-zinc-300">
                 {activeTeam.agentCount} AGENTS
               </span>
-              {(currentUser?.role === 'admin' || currentUser?.role === 'developer') && (
+              {(['super', 'supervisor', 'admin', 'developer'].includes(currentUser?.role || '')) && (
                 <button
                   onClick={() => openModal('editTeam', activeTeam)}
                   className="p-1 rounded-md bg-white/5 hover:bg-yellow-400/20 text-zinc-400 hover:text-yellow-300 transition-colors"
@@ -129,7 +129,7 @@ export const TopHeader: React.FC = () => {
 
           {/* Team Selector Dropdown for Admin & Developer */}
           <AnimatePresence>
-            {isTeamSelectorOpen && (currentUser?.role === 'admin' || currentUser?.role === 'developer') && (
+            {isTeamSelectorOpen && (['super', 'supervisor', 'admin', 'developer'].includes(currentUser?.role || '')) && (
               <motion.div
                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -379,6 +379,21 @@ export const TopHeader: React.FC = () => {
                     </div>
 
                     {/* Nav Actions */}
+                    {/* Developer Simulate Access Action */}
+                    {currentUser?.role === 'developer' && (
+                      <button
+                        onClick={() => {
+                          openModal('simulateAccess');
+                          setIsDropdownOpen(false);
+                          playSound('click');
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-zinc-800/70 text-xs font-inter text-zinc-200 transition-all"
+                      >
+                        <Settings className="w-4 h-4 text-purple-400" />
+                        Simulate Access
+                      </button>
+                    )}
+
                     <button
                       onClick={() => {
                         openModal('profile');
