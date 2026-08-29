@@ -379,7 +379,7 @@ export const TopHeader: React.FC = () => {
                     </div>
 
                     {/* Nav Actions */}
-                    {/* Developer Simulate Access Action */}
+                    {/* Only the developer account may switch into another account. */}
                     {currentUser?.role === 'developer' && (
                       <button
                         onClick={() => {

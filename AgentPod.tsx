@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, BreakRecord } from '../../types';
+import { User, BreakRecord } from './types';
 import { useApp } from './AppContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { SNAP, GLIDE, COIN_FLIP_TRANSITION } from './motion-presets';
