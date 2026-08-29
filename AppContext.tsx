@@ -1,8 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { User, Team, BreakRecord, WCTracking, Warning, SNNHeadline, ShiftConfig, ChatMessage, Broadcast, AuditLogEntry, ShiftNote, BreakType, UserRole } from './types';
 import { getStoredData, setStoredData, STORAGE_KEYS, INITIAL_USERS, INITIAL_TEAMS, INITIAL_BREAKS, INITIAL_WC_TRACKING, INITIAL_WARNINGS, INITIAL_HEADLINES, INITIAL_CONFIG } from './storage';
 import { playSound } from './sound';
-import { loginWithGooglePopup, logoutFirebaseAuth, isEmailAllowedToLogin } from './authService';
+import { syncClaimsToAppUser } from './authService';
+import { isEmailAllowedToLogin, type AccessLevel } from './accessLevels';
+import { beginLogin, beginLogout, fetchSession, type SessionSnapshot } from './sessionApi';
 import {
   subscribeToFirestoreBreaks,
   subscribeToFirestoreWCTracking,
@@ -62,9 +64,11 @@ interface AppContextType {
 
   // Actions
   loginAs: (email: string) => void;
-  loginWithGoogle: () => Promise<void>;
+  /** Server-verified session: identity plus the access tier the gate actually granted. */
+  session: SessionSnapshot | null;
+  sessionState: 'verifying' | 'authenticated' | 'unauthenticated' | 'unavailable';
+  accessLevel: AccessLevel | null;
   setUserDirectly: (user: User) => void;
-  simulateAccessAs: (user: User) => void;
   logout: () => void;
   setActiveTeamId: (teamId: string) => void;
   updateTeam: (teamId: string, updates: Partial<Team>) => void;
@@ -100,15 +104,13 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [users, setUsers] = useState<User[]>(() => getStoredData(STORAGE_KEYS.USERS, INITIAL_USERS));
   const [teams, setTeams] = useState<Team[]>(() => getStoredData(STORAGE_KEYS.TEAMS, INITIAL_TEAMS));
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    const saved = getStoredData<User | null>(STORAGE_KEYS.CURRENT_USER, null);
-    if (saved && saved.email && saved.email !== 'solomon@bcflights.com') {
-      const match = INITIAL_USERS.find(u => u.email === saved.email);
-      return match ? { ...match, ...saved } : saved;
-    }
-    // Production must always require a real Google sign-in. Never silently enter a demo account.
-    return null;
-  });
+  /**
+   * Always starts empty. This used to restore the previous session from
+   * localStorage, which let anyone become any user by editing one key — a
+   * client-controlled identity is not an identity. `currentUser` is now populated
+   * exclusively by the verified-session effect below.
+   */
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const [activeTeamId, setActiveTeamId] = useState<string>(() => currentUser?.teamId || 'team_strikers');
   const [breaks, setBreaks] = useState<BreakRecord[]>(() => getStoredData(STORAGE_KEYS.BREAKS, INITIAL_BREAKS));
@@ -313,6 +315,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const loginAs = (email: string) => {
+    if (!canImpersonate()) {
+      addHeadline(`🚫 Access restricted: switching users requires an admin or developer session on the production tier`, 'warning', 'urgent');
+      return;
+    }
     if (!isEmailAllowedToLogin(email)) {
       addHeadline(`🚫 Access restricted: ${email} is not an authorized @bcflights.com account`, 'warning', 'urgent');
       return;
@@ -328,6 +334,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const setUserDirectly = (user: User) => {
+    if (!canImpersonate()) {
+      addHeadline(`🚫 Access denied: only an admin or developer session may set the active user directly`, 'warning', 'urgent');
+      return;
+    }
     if (!isEmailAllowedToLogin(user.email)) {
       addHeadline(`🚫 Access denied: ${user.email} does not belong to @bcflights.com domain`, 'warning', 'urgent');
       return;
@@ -346,66 +356,139 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setActiveTeamId(user.teamId);
     }
     playSound('click');
-    addHeadline(`👋 ${user.name} authenticated via Google`, 'info', 'normal');
+    addHeadline(`👋 Active session switched to ${user.name} (${user.role}) — impersonation by ${session?.user.email || 'admin'}`, 'alert', 'normal');
   };
 
   /**
-   * Switch the session to another user WITHOUT Google sign-in.
-   * Restricted to the developer account in production builds; open to anyone
-   * when running a dev build (vite dev) so the floor can be tested offline.
-   * Never opens an empty modal or locks the UI: pure state transition.
+   * Server-verified session.
+   *
+   * The ONLY thing that can put a user on the floor. `currentUser` is never
+   * initialized from localStorage and never set by a click handler in the browser:
+   * it is derived from `/api/session`, which is derived from the signed session
+   * cookie, which is only ever written by the OIDC callback after the ID token
+   * signature, issuer, audience, expiry and nonce all check out.
+   *
+   * Consequence worth stating: a user cannot forge a session by editing storage,
+   * and a stolen localStorage blob is worthless. The trade-off is that a session that
+   * expires mid-shift is detected by the gate (401/302) on the next navigation, so
+   * the expiry timer below proactively bounces the browser to Auth0 instead.
    */
-  const simulateAccessAs = (user: User) => {
-    const isDevBuild = import.meta.env.DEV;
-    if (!isDevBuild && currentUser?.role !== 'developer') {
-      console.warn('[simulateAccessAs] Blocked: simulated access requires the developer role outside dev builds.');
+  const [session, setSession] = useState<SessionSnapshot | null>(null);
+  const [sessionState, setSessionState] = useState<'verifying' | 'authenticated' | 'unauthenticated' | 'unavailable'>('verifying');
+  const syncedSub = useRef<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const outcome = await fetchSession();
+      if (cancelled) return;
+
+      if (outcome.status === 'authenticated') {
+        setSession(outcome.session);
+        setSessionState('authenticated');
+        return;
+      }
+
+      // Any non-authenticated outcome wipes the floor session first.
+      setSession(null);
+      syncedSub.current = null;
+      setCurrentUser(null);
+
+      if (outcome.status === 'unauthenticated') {
+        // The gate already redirects real navigations; this covers an SPA that
+        // mounted without one (e.g. a stale tab) so no UI is ever shown at all.
+        setSessionState('unauthenticated');
+        beginLogin();
+        return;
+      }
+      setSessionState('unavailable');
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!session) return;
+    const remaining = session.expiresAt - Date.now();
+    if (remaining <= 0) {
+      setCurrentUser(null);
+      beginLogin();
       return;
     }
-    if (!user || !isEmailAllowedToLogin(user.email)) {
-      addHeadline(`🚫 Simulation denied: ${user?.email || 'unknown'} is not an authorized account`, 'warning', 'urgent');
-      return;
-    }
-    setUsers(prev => {
-      const idx = prev.findIndex(u => u.email.toLowerCase() === user.email.toLowerCase() || u.id === user.id);
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = { ...next[idx], ...user };
-        return next;
-      }
-      return [user, ...prev];
-    });
-    setCurrentUser(user);
-    if (user.role !== 'admin' && user.role !== 'developer') {
-      setActiveTeamId(user.teamId);
-    }
-    playSound('click');
-    addHeadline(`🛠 Simulated session started as ${user.name} (${user.role})`, 'alert', 'normal');
+    const timer = setTimeout(() => {
+      setCurrentUser(null);
+      beginLogin();
+    }, remaining);
+    return () => clearTimeout(timer);
+  }, [session]);
+
+  /**
+   * Session -> floor profile, hydrated once per identity.
+   *
+   * `syncedSub` guards against re-running on every render (each run writes to
+   * Firestore). If the profile read/write fails — Firestore is unreachable, offline,
+   * or the rules are tightened later — the user still enters on the strength of the
+   * verified session with defaults, because the identity decision and the data layer
+   * are separate concerns. Losing the floor to a storage hiccup is not acceptable.
+   */
+  useEffect(() => {
+    if (!session || sessionState !== 'authenticated') return;
+    if (syncedSub.current === session.user.sub) return;
+    syncedSub.current = session.user.sub;
+
+    let cancelled = false;
+    syncClaimsToAppUser(session.user, session.accessLevel)
+      .then(appUser => {
+        if (cancelled) return;
+        setCurrentUser(appUser);
+        if (appUser.role !== 'admin' && appUser.role !== 'developer') {
+          setActiveTeamId(appUser.teamId);
+        }
+      })
+      .catch(err => {
+        if (cancelled) return;
+        console.error('[session] profile hydration failed, using verified claims directly:', err);
+        setCurrentUser({
+          ...session.user,
+          id: session.user.sub,
+          accessLevel: session.accessLevel,
+          isOnline: true,
+        });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session, sessionState]);
+
+  /**
+   * Impersonation (GodMode "simulate access" / demo `loginAs`) is a management
+   * affordance, never a login path. It now requires a confirmed session on the
+   * production tier held by an admin or developer — previously a dev build let
+   * *anyone* jump straight to the developer role, which is exactly the demo mode this
+   * mandate removes.
+   */
+  const canImpersonate = (): boolean => {
+    if (sessionState !== 'authenticated' || !session) return false;
+    if (session.accessLevel !== 'production') return false;
+    return session.user.role === 'developer' || session.user.role === 'admin';
   };
 
-  const loginWithGoogle = async () => {
-    try {
-      const user = await loginWithGooglePopup();
-      if (!isEmailAllowedToLogin(user.email)) {
-        throw new Error(`Access restricted: ${user.email} is not authorized. Only @bcflights.com emails can log in.`);
-      }
-      setUserDirectly(user);
-    } catch (err: any) {
-      console.error('Google Popup Sign-in Error:', err);
-      throw err;
-    }
-  };
-
-  const logout = async () => {
-    try {
-      await logoutFirebaseAuth();
-    } catch (e) {
-      // Ignore logout errors
-    }
+  const logout = () => {
+    // Clear local state first, then hand off to /auth/logout (which drops the cookie
+    // and round-trips Auth0's /v2/logout). If that navigation is blocked, the floor
+    // UI is already gone; the gate, not this component, is what protects the data.
     setCurrentUser(null);
+    setSession(null);
+    syncedSub.current = null;
     closeModal();
     setIsGodModeOpen(false);
     setIsSettingsOpen(false);
+    beginLogout();
   };
+
+
 
   const addHeadline = useCallback((text: string, category: SNNHeadline['category'] = 'break', priority: SNNHeadline['priority'] = 'normal') => {
     const newHeadline: SNNHeadline = {
@@ -1084,9 +1167,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isSearchGroundingOpen,
         setIsSearchGroundingOpen,
         loginAs,
-        loginWithGoogle,
+        session,
+        sessionState,
+        accessLevel: session?.accessLevel ?? null,
         setUserDirectly,
-        simulateAccessAs,
         logout,
         setActiveTeamId: handleSetActiveTeamId,
         updateTeam,

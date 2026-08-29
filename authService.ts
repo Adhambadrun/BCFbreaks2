@@ -1,100 +1,70 @@
-import {
-  auth,
-  googleProvider,
-  signInWithPopup,
-  signInWithCredential,
-  signOut,
-  onAuthStateChanged,
-  db,
-  doc,
-  getDoc,
-  setDoc,
-  GoogleAuthProvider,
-  FirebaseUser,
-} from './firebase';
-import { User, UserRole } from './types';
+/**
+ * BCFbreaks identity service.
+ * ===========================================================================
+ * Auth0 is no longer touched in the browser at all. Sign-in, token validation and
+ * access-tier decisions live in `serverAuth.ts`; what remains here is the mapping
+ * from an already-verified session identity to the application's `User` record,
+ * merged with any profile stored in Firestore.
+ *
+ * History: this file used to run Firebase Auth (Google popup + One Tap), then briefly
+ * `@auth0/auth0-react`. Both client-side identity paths were removed when the gate moved
+ * server-side, because a client-side "am I allowed?" check is not a security boundary —
+ * the code doing the checking is delivered to the person being checked.
+ *
+ * Firestore stays as the data layer. `firestore.rules` grants access unconditionally
+ * (`allow read, write: if true`), so no read ever depended on a Firebase ID token.
+ * That also means the *only* thing standing between an anonymous visitor and every
+ * document in this database is this gate — see AUTH0.md before changing either.
+ */
+import { db, doc, getDoc, setDoc } from './firebase';
+import { determineRoleForEmail, sanitizeIdentityId, type AccessLevel } from './accessLevels';
+import type { SessionUser } from './sessionApi';
+import type { User as AppUser } from './types';
 import { INITIAL_USERS } from './storage';
-import firebaseConfig from './firebase-applet-config.json';
 
-// Domain security validation: Only name@bcflights.com allowed
-export function isEmailAllowedToLogin(email: string): boolean {
-  if (!email) return false;
-  const lower = email.trim().toLowerCase();
-  // Allowed domain is @bcflights.com (with developer god mode override)
-  return lower.endsWith('@bcflights.com') || lower === 'adhambadraan@gmail.com';
-}
-
-// Helper to determine role from email or defaults
-export function determineRoleForEmail(email: string): { role: UserRole; teamId: string; name?: string } {
-  const lower = email.toLowerCase();
-  // Developer override (Adham)
-  if (lower === 'adhambadraan@gmail.com' || lower === 'adham@bcflights.com') {
-    return { role: 'developer', teamId: 'team_strikers', name: 'Adham Badran' };
-  }
-  // Admin
-  if (lower.includes('admin') || lower === 'karim.admin@bcflights.com' || lower === 'maya.admin@bcflights.com') {
-    return { role: 'admin', teamId: 'team_strikers' };
-  }
-  // Supervisors
-  if (lower.includes('supervisor') || lower === 'tarek.zaki@bcflights.com') {
-    return { role: 'supervisor', teamId: 'team_strikers' };
-  }
-  if (lower === 'rania.fawzy@bcflights.com') {
-    return { role: 'supervisor', teamId: 'team_titans' };
-  }
-  if (lower === 'omar.nabil@bcflights.com') {
-    return { role: 'supervisor', teamId: 'team_apex' };
-  }
-  if (lower === 'dina.helmy@bcflights.com') {
-    return { role: 'supervisor', teamId: 'team_phantom' };
-  }
-  // Check if matches any existing seeded user
-  const seeded = INITIAL_USERS.find(u => u.email.toLowerCase() === lower);
-  if (seeded) {
-    return { role: seeded.role, teamId: seeded.teamId, name: seeded.name };
-  }
-  // Default to agent on team strikers
-  return { role: 'agent', teamId: 'team_strikers' };
-}
+// Policy helpers moved to `accessLevels.ts` so the server and the browser share one
+// definition. Re-exported here for existing import sites.
+export { isEmailAllowedToLogin, getUserAccessLevel, determineRoleForEmail } from './accessLevels';
 
 /**
- * Creates or synchronizes an application User object from a Firebase User
+ * Builds (and persists) the application `User` from a verified session.
+ *
+ * The role is taken from the session, NOT re-derived here: the server already
+ * applied the tier clamp that stops a Preview-tier `…-admin@gmail.com` from picking
+ * up admin privileges through the email pattern in `determineRoleForEmail()`.
  */
-export async function syncFirebaseUserToApp(fbUser: FirebaseUser): Promise<User> {
-  const email = fbUser.email || `${fbUser.uid}@google.auth`;
-
-  // Enforce Domain Restriction: only name@bcflights.com allowed
-  if (!isEmailAllowedToLogin(email)) {
-    await logoutFirebaseAuth();
-    throw new Error(
-      `Access Denied: ${email} is not authorized. Only accounts with the @bcflights.com domain (e.g. name@bcflights.com) are allowed to log into the floor.`
-    );
+export async function syncClaimsToAppUser(user: SessionUser, accessLevel: AccessLevel): Promise<AppUser> {
+  const email = String(user.email || '').toLowerCase().trim();
+  const subjectId = String(user.sub || '').trim();
+  if (!subjectId || !email) {
+    throw new Error('The verified session is missing an identity; reload to sign in again.');
   }
 
-  const userDocRef = doc(db, 'users', fbUser.uid);
-
+  const userDocRef = doc(db, 'users', sanitizeIdentityId(subjectId));
   const meta = determineRoleForEmail(email);
 
-  let existingData: Partial<User> = {};
+  let existingData: Partial<AppUser> = {};
   try {
-    const docSnap = await getDoc(userDocRef);
-    if (docSnap.exists()) {
-      existingData = docSnap.data() as Partial<User>;
-    }
+    const snap = await getDoc(userDocRef);
+    if (snap.exists()) existingData = snap.data() as Partial<AppUser>;
   } catch (err) {
     console.warn('Firestore read error (using fallback defaults):', err);
   }
 
-  // Look for match in seeded list to preserve badges/history if present
-  const seeded = INITIAL_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
+  const seeded = INITIAL_USERS.find(u => u.email.toLowerCase() === email);
 
-  const userObj: User = {
-    id: fbUser.uid,
-    name: fbUser.displayName || meta.name || seeded?.name || email.split('@')[0],
-    email: email,
-    role: existingData.role || seeded?.role || meta.role,
-    teamId: existingData.teamId || seeded?.teamId || meta.teamId,
-    avatarUrl: fbUser.photoURL || existingData.avatarUrl || seeded?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+  const userObj: AppUser = {
+    id: subjectId,
+    name: user.name || meta.name || seeded?.name || email.split('@')[0],
+    email,
+    role: user.role || (existingData.role as AppUser['role']) || meta.role,
+    teamId: user.teamId || existingData.teamId || seeded?.teamId || meta.teamId,
+    accessLevel,
+    avatarUrl:
+      user.picture ||
+      existingData.avatarUrl ||
+      seeded?.avatarUrl ||
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
     personalMotto: existingData.personalMotto || seeded?.personalMotto || 'Sales Floor Champion 🚀',
     powerEmoji: existingData.powerEmoji || seeded?.powerEmoji || '⚡',
     podColorTheme: existingData.podColorTheme || seeded?.podColorTheme || '#00E5FF',
@@ -117,9 +87,12 @@ export async function syncFirebaseUserToApp(fbUser: FirebaseUser): Promise<User>
     longestStreak: existingData.longestStreak ?? seeded?.longestStreak ?? 5,
   };
 
-  // Persist back to Firestore asynchronously
+  // Persist the profile. Firestore rejects `undefined` field values outright
+  // (`blockReason` is routinely undefined), and the previous implementation passed
+  // them straight through — so this write threw on every new signer and was
+  // swallowed by the catch, meaning first-time profiles were never saved.
   try {
-    await setDoc(userDocRef, userObj, { merge: true });
+    await setDoc(userDocRef, omitUndefined(userObj), { merge: true });
   } catch (err) {
     console.warn('Firestore setDoc failed:', err);
   }
@@ -127,92 +100,7 @@ export async function syncFirebaseUserToApp(fbUser: FirebaseUser): Promise<User>
   return userObj;
 }
 
-/**
- * Sign in using Firebase Google Popup
- */
-export async function loginWithGooglePopup(): Promise<User> {
-  const result = await signInWithPopup(auth, googleProvider);
-  return await syncFirebaseUserToApp(result.user);
-}
-
-/**
- * Sign in using Google Identity Services ID Token (One-Tap / GSI credential)
- */
-export async function loginWithGoogleCredential(idToken: string): Promise<User> {
-  const credential = GoogleAuthProvider.credential(idToken);
-  const result = await signInWithCredential(auth, credential);
-  return await syncFirebaseUserToApp(result.user);
-}
-
-/**
- * Firebase Sign Out
- */
-export async function logoutFirebaseAuth(): Promise<void> {
-  await signOut(auth);
-}
-
-/**
- * Initialize Google One Tap / Sign In with Google button
- */
-export function initGoogleOneTap(onSuccess: (user: User) => void, onError?: (err: any) => void) {
-  if (typeof window === 'undefined') return;
-
-  const clientId = (firebaseConfig as any).oAuthClientId || (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID;
-  if (!clientId) {
-    console.warn('No oAuthClientId configured for Google One Tap');
-    return;
-  }
-
-  const handleCredentialResponse = async (response: any) => {
-    try {
-      if (response.credential) {
-        const user = await loginWithGoogleCredential(response.credential);
-        onSuccess(user);
-      }
-    } catch (err) {
-      console.error('Google One Tap authentication error:', err);
-      if (onError) onError(err);
-    }
-  };
-
-  // Wait until window.google is ready
-  const checkGoogle = setInterval(() => {
-    const google = (window as any).google;
-    if (google && google.accounts && google.accounts.id) {
-      clearInterval(checkGoogle);
-      try {
-        google.accounts.id.initialize({
-          client_id: clientId,
-          callback: handleCredentialResponse,
-          auto_select: false,
-          cancel_on_tap_outside: true,
-        });
-
-        // Prompt One-Tap overlay
-        google.accounts.id.prompt((notification: any) => {
-          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            console.log('Google One Tap suppressed or dismissed:', notification.getNotDisplayedReason?.());
-          }
-        });
-
-        // Render official button if container exists
-        const btnContainer = document.getElementById('google-signin-button');
-        if (btnContainer) {
-          google.accounts.id.renderButton(btnContainer, {
-            theme: 'filled_black',
-            size: 'large',
-            shape: 'pill',
-            text: 'signin_with',
-            width: 320,
-            logo_alignment: 'left',
-          });
-        }
-      } catch (e) {
-        console.warn('Error configuring Google Identity Services:', e);
-      }
-    }
-  }, 300);
-
-  // Clear timeout after 10s
-  setTimeout(() => clearInterval(checkGoogle), 10000);
+/** Shallow copy without `undefined` values, which Firestore refuses to store. */
+function omitUndefined<T extends Record<string, any>>(value: T): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined));
 }

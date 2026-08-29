@@ -84,7 +84,7 @@ export const ModalManager: React.FC = () => {
     warnings,
     wcTracking,
     endBreak,
-    simulateAccessAs,
+    setUserDirectly,
   } = useApp();
 
   // Local states for modal forms
@@ -1859,7 +1859,7 @@ export const ModalManager: React.FC = () => {
                 key={u.id}
                 className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5 hover:border-purple-500/50 transition-colors cursor-pointer group"
                 onClick={() => {
-                  simulateAccessAs(u);
+                  setUserDirectly(u);
                   closeModal();
                 }}
               >
