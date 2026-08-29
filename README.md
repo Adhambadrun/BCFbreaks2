@@ -80,6 +80,11 @@ http://localhost:3000/api/auth/callback   http://localhost:3000
 Production deploys set these in Vercel (or equivalent) encrypted environment variables per
 environment — the repo never contains real credentials.
 
+Root `vercel.json` pins **`framework: "nextjs"`** and clears `outputDirectory`. The Vercel
+project was originally a Vite app (`legacy/`), so dashboard settings still looked for a
+`dist/` folder after `next build` and failed with *No Output Directory named "dist"*. Do
+not change that file — Next.js is served by `@vercel/next`, not as a static `dist` site.
+
 ---
 
 ## Prisma notes (why `scripts/prisma.mjs` exists)
