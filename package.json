@@ -2,10 +2,11 @@
   "name": "bcfbreaks",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "Team Breaks & Shift Management — Next.js + Auth0 + Prisma (live production)",
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/prisma.mjs generate && next build",
+    "build": "allow-scripts run && node scripts/prisma.mjs generate && next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "audit:roles": "tsx scripts/audit-roles.ts",
@@ -26,7 +27,16 @@
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@embedded-postgres/linux-x64",
+      "@prisma/engines",
+      "esbuild",
+      "prisma"
+    ]
+  },
   "devDependencies": {
+    "@lavamoat/allow-scripts": "^5.1.0",
     "@tailwindcss/postcss": "^4.1.14",
     "@types/node": "^22.14.0",
     "@types/pg": "^8.15.0",
@@ -37,5 +47,13 @@
     "tailwindcss": "^4.1.14",
     "tsx": "^4.20.0",
     "typescript": "5.9.3"
+  },
+  "lavamoat": {
+    "allowScripts": {
+      "embedded-postgres>@embedded-postgres/linux-x64#17.10.0-beta.17": true,
+      "prisma#7.10.0": true,
+      "prisma>@prisma/engines#7.10.0": true,
+      "tsx>esbuild#0.28.2": true
+    }
   }
 }
