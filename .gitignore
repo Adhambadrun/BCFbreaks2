@@ -1,6 +1,28 @@
+# dependencies
 node_modules/
+
+# generated prisma client (created by `prisma generate` on postinstall)
+src/generated/
+
+# next.js
+.next/
+out/
+next-env.d.ts
+
+# production builds
 dist/
-server.js
+build/
+
+# local embedded postgres data (dev only)
+.pgdata/
+
+# secrets — NEVER commit credentials
 .env
 .env.local
+.env.*.local
+
+# misc
+*.tsbuildinfo
 *.log
+.DS_Store
+.vercel

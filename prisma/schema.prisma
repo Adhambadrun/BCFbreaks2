@@ -1,0 +1,74 @@
+// =============================================================================
+// BCFbreaks — Prisma schema (PostgreSQL)
+// =============================================================================
+// The Role / User / Team / Attendance models follow the project specification.
+// The Asset model is an addition that gives avatars & team logos a permanent,
+// database-backed home (survives page reloads and redeploys). Binary bytes are
+// stored in Postgres and served back through GET /api/assets/[id], so
+// `avatarUrl` / `logoUrl` are stable URLs that never depend on volatile local
+// state or ephemeral filesystem storage.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+  runtime  = "nodejs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  DEV
+  ADMIN
+  SUPERVISOR
+  AGENT
+  PREVIEWER
+}
+
+model User {
+  id             String       @id @default(uuid())
+  email          String       @unique
+  name           String
+  avatarUrl      String?
+  role           Role         @default(AGENT)
+  teamId         String?
+  team           Team?        @relation("TeamMembers", fields: [teamId], references: [id])
+  supervisedTeam Team?        @relation("TeamSupervisor")
+  attendances    Attendance[]
+  uploadedAssets Asset[]      @relation("AssetUploader")
+  createdAt      DateTime     @default(now())
+}
+
+model Team {
+  id           String   @id @default(uuid())
+  name         String   @unique
+  logoUrl      String?
+  supervisorId String?  @unique
+  supervisor   User?    @relation("TeamSupervisor", fields: [supervisorId], references: [id])
+  members      User[]   @relation("TeamMembers")
+  createdAt    DateTime @default(now())
+}
+
+model Attendance {
+  id       String    @id @default(uuid())
+  userId   String
+  user     User      @relation(fields: [userId], references: [id])
+  clockIn  DateTime  @default(now())
+  clockOut DateTime?
+
+  @@index([userId, clockOut])
+}
+
+/// Persistent binary storage for user avatars and team logos.
+model Asset {
+  id           String   @id @default(uuid())
+  filename     String
+  mimeType     String
+  size         Int
+  data         Bytes
+  uploadedById String?
+  uploadedBy   User?    @relation("AssetUploader", fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
+}
