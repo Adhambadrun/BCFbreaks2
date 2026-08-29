@@ -106,9 +106,76 @@ approved, or the Vercel build fails.
 
 ## 4. Environment variables (build-time)
 
-- `npm run build` runs `prisma generate` (no live DB needed) and then `next build`.
-  Pages are `force-dynamic` / server-rendered, so build-time DB connectivity is
-  not required, but the following must exist for the Prisma/Auth0 client to load
-  cleanly: `DATABASE_URL`, `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`,
-  `AUTH0_SECRET`, `APP_BASE_URL`. Set them in the Vercel project env, not in git.
+- **The build must succeed with ZERO environment variables set.** `next build`
+  runs in an environment where runtime secrets are not guaranteed to exist
+  (Vercel preview without env, CI, a fresh clone with no `.env.local`), so a
+  missing var may never be a *build-time* failure. Verify with:
+  ```bash
+  env -u DATABASE_URL -u AUTH0_DOMAIN -u AUTH0_CLIENT_ID \
+      -u AUTH0_CLIENT_SECRET -u AUTH0_SECRET -u APP_BASE_URL npm run build
+  ```
+- `npm run build` runs `prisma generate` (no live DB needed) and then
+  `next build`. Pages and API routes are all `force-dynamic` / server-rendered
+  (§5), so build-time DB connectivity is **not** required.
+- These are **runtime** variables, required for real requests, and are supplied
+  by the platform per environment — set in the Vercel project env (Production
+  *and* Preview), never in git:
+  `DATABASE_URL`, `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`,
+  `AUTH0_SECRET`, `APP_BASE_URL`.
 - See `.env.example` for the full template. Never commit real secrets.
+
+---
+
+## 5. Module-scope side effects — infra clients must be LAZY
+
+This is the rule that keeps `Collecting page data` from failing a deploy.
+
+### 5a. Never construct `prisma` / `auth0` at module scope
+
+`next build` imports **every** page and route module to collect its route-segment
+config. An eager client in a module body runs during that import, so a runtime
+concern (`DATABASE_URL` missing) becomes a build failure:
+
+```
+   Collecting page data ...
+Error: DATABASE_URL is not set. ...
+> Build error occurred
+[Error: Failed to collect page data for /api/admin/teams]
+```
+
+**Enforcement:** `src/lib/db.ts` and `src/lib/auth0.ts` export their clients via
+`createLazyClient()` (`src/lib/lazy.ts`), which defers construction to the first
+real property access. Do not "simplify" either file back to a module-scope
+`new PrismaClient()` / `new Auth0Client()`, and do not add a new module-scope
+client, `fetch`, `fs` read, or env assertion to any file under `src/lib/` that is
+imported by a route or page. Keep it lazy, or move the work inside a handler.
+
+The proxy is a drop-in stand-in, so call sites stay unchanged
+(`prisma.user.findUnique(…)` still works), and the client is memoized per
+container — a new `pg` pool is never spawned per request.
+
+### 5b. Every API route must be `force-dynamic`
+
+**All 12 `src/app/api/**/route.ts` files carry:**
+```ts
+export const dynamic = "force-dynamic";
+```
+Server-rendered pages under `src/app/**/page.tsx` carry the same export.
+
+Two reasons:
+1. Any route handler that reads session/DB state must never be prerendered or
+   statically cached — a snapshot would leak one user's state to everyone.
+2. It keeps the route out of the static-generation worker entirely.
+
+**Enforcement:** when adding a new API route, add the export in the same commit.
+Check with:
+```bash
+test "$(find src/app/api -name route.ts | wc -l)" -eq \
+     "$(grep -rl 'force-dynamic' src/app/api --include=route.ts | wc -l)" \
+  && echo "all API routes are force-dynamic"
+```
+
+> Note: `force-dynamic` alone does **not** fix the build — Next still *imports*
+> the module to read the config, which is what runs the eager constructor. §5a
+> and §5b are both required; §5a is the load-bearing one.
+

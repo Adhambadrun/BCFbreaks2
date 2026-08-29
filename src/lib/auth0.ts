@@ -1,4 +1,5 @@
 import { Auth0Client } from "@auth0/nextjs-auth0/server";
+import { createLazyClient } from "./lazy";
 
 /**
  * Auth0 Next.js SDK (v4) singleton.
@@ -12,8 +13,15 @@ import { Auth0Client } from "@auth0/nextjs-auth0/server";
  *
  * Environment variables (see .env.example):
  *   AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET, AUTH0_SECRET, APP_BASE_URL
+ *
+ * ⚠️ LAZY BY CONTRACT (AGENT_INSTRUCTIONS.md §5): constructing `Auth0Client` at
+ * module scope only *warns* when the auth env vars are absent, but that warning
+ * is printed into `next build`'s "Collecting page data" output and §0 of
+ * AGENT_INSTRUCTIONS.md treats build warnings as a failure. Deferring
+ * construction keeps the build log clean and surfaces misconfiguration on the
+ * request that actually needs it.
  */
-export const auth0 = new Auth0Client({
+const auth0Options = {
   routes: {
     login: "/api/auth/login",
     logout: "/api/auth/logout",
@@ -22,4 +30,9 @@ export const auth0 = new Auth0Client({
     accessToken: "/api/auth/access-token",
     backChannelLogout: "/api/auth/backchannel-logout",
   },
-});
+} as const;
+
+export const auth0: Auth0Client = createLazyClient(
+  "auth0",
+  () => new Auth0Client({ ...auth0Options }),
+);
