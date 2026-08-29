@@ -5,8 +5,10 @@ import { createServer as createViteServer } from 'vite';
 import { WebSocketServer, WebSocket } from 'ws';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
 import dotenv from 'dotenv';
+import { createAuth, readSession } from './serverAuth';
 
-dotenv.config();
+// `.env.local` (gitignored, machine-specific) overrides `.env` (deploy-time).
+dotenv.config({ path: ['.env.local', '.env'] });
 
 const PORT = 3000;
 
@@ -15,6 +17,22 @@ async function startServer() {
   app.use(express.json());
 
   const server = http.createServer(app);
+
+  // ---------------------------------------------------------------------
+  // ZERO-TRUST GATE — mounted before every other route, including the AI
+  // endpoints, Vite's dev middleware and the static handler, so there is no
+  // code path that reaches content without a verified session.
+  // ---------------------------------------------------------------------
+  const auth = createAuth();
+  app.use(auth.middleware); // /auth/login, /auth/callback, /auth/logout, /api/session
+  app.use(auth.guard); // everything else: session required, or refuse/redirect
+  if (!auth.config) {
+    console.error(`[auth0] REFUSING TO SERVE: ${auth.configReason}`);
+  } else {
+    console.log(
+      `[auth0] zero-trust gate active for "${auth.envName}" tenant${auth.devMode ? ' (LOCAL DEV SESSION BYPASS — never enable in production)' : ''}`
+    );
+  }
 
   // Lazy Gemini client helper
   const getAI = () => {
@@ -102,10 +120,43 @@ Give concise, encouraging, and actionable response suitable for high-performing 
   });
 
   // 4. Gemini Live API WebSocket Server (/live) using gemini-3.1-flash-live-preview
-  const wss = new WebSocketServer({ server, path: '/live' });
+  //
+  // `noServer` + a hand-rolled upgrade handler, so authorization happens *before*
+  // the WebSocket handshake is completed. Closing an already-open socket (the usual
+  // shortcut) leaves a window where the client "connects" and can send frames before
+  // the close lands; refusing the upgrade means an unauthenticated socket never
+  // exists. `/live` proxies into a billed Gemini Live session, so this is the one
+  // route where a half-open connection has a real cost.
+  const wss = new WebSocketServer({ noServer: true });
 
-  wss.on('connection', async (clientWs: WebSocket) => {
-    console.log('Client connected to Live Voice WebSocket');
+  server.on('upgrade', (request, socket, head) => {
+    const requestUrl = new URL(request.url || '', 'http://localhost');
+    if (requestUrl.pathname !== '/live') {
+      socket.destroy();
+      return;
+    }
+    const wsSession = readSession(request, auth.config).session;
+    if (!wsSession) {
+      console.warn('[auth0] rejected unauthenticated /live WebSocket upgrade');
+      socket.on('error', () => {});
+      socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+    wss.handleUpgrade(request, socket as any, head, clientWs => {
+      wss.emit('connection', clientWs, request);
+    });
+  });
+
+  wss.on('connection', async (clientWs: WebSocket, request: http.IncomingMessage) => {
+    // Re-checked here as defense in depth: if another upgrade path is ever added
+    // that bypasses the handler above, the stream still refuses to start.
+    const wsSession = readSession(request, auth.config).session;
+    if (!wsSession) {
+      clientWs.close(4401, 'unauthorized');
+      return;
+    }
+    console.log(`Live Voice WebSocket connected (${wsSession.email})`);
 
     let session: any = null;
 

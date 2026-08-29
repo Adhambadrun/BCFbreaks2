@@ -19,21 +19,29 @@ import { SettingsPanel } from './SettingsPanel';
 import { NewsPanel } from './NewsPanel';
 import { ModalManager } from './ModalManager';
 import { FloorAlertOverlays } from './FloorAlertOverlays';
-import { LoginCard } from './LoginCard';
+import { LockedGate } from './LockedGate';
+import { Profile } from './Profile';
+import { LogoutButton } from './LogoutButton';
 import { VoiceFloorAssistant } from './VoiceFloorAssistant';
 import { SearchGroundingWidget } from './SearchGroundingWidget';
 import { LayoutGrid, BarChart2, Shield } from 'lucide-react';
 import { playSound } from './sound';
 
 const AppContent: React.FC = () => {
-  const { currentUser } = useApp();
+  const { currentUser, sessionState } = useApp();
   const [activeTab, setActiveTab] = useState<'pods' | 'supervisor' | 'admin'>('pods');
 
+  // ZERO DEMO MODE: nothing about the floor renders until the server has confirmed a
+  // session. There is deliberately no sign-in card, no preview, and no demo entry
+  // point in this branch — the only way forward is the Auth0 redirect the server
+  // issues (with `sessionApi` as the client-side fallback for a stale tab).
   if (!currentUser) {
+    const gateState =
+      sessionState === 'unavailable' ? 'unavailable' : sessionState === 'authenticated' ? 'verifying' : 'redirecting';
     return (
       <div className="relative min-h-screen w-full bg-black text-white select-none">
         <ShaderBackground />
-        <LoginCard />
+        <LockedGate state={gateState} />
       </div>
     );
   }
@@ -51,6 +59,16 @@ const AppContent: React.FC = () => {
 
       {/* 44px Sticky SNN Live Ticker */}
       <SNNTicker />
+
+      {/* Verified identity + the access tier the gate actually granted */}
+      <div className="w-full max-w-7xl mx-auto px-4 pt-3 flex flex-col sm:flex-row gap-2 sm:items-center">
+        <div className="flex-1 min-w-0">
+          <Profile />
+        </div>
+        <div className="sm:w-44 shrink-0">
+          <LogoutButton />
+        </div>
+      </div>
 
       {/* Role Navigation Bar (For Supervisor / Admin / Developer) */}
       {isSupervisorOrAbove && (
