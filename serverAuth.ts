@@ -491,8 +491,23 @@ export interface AuthOptions {
 
 export function createAuth({ env = process.env, allowLocalDevSession = true }: AuthOptions = {}): AuthBundle {
   const resolved = resolveAuth0Config(env);
+  // Local-only escape hatch. Note the belt-and-braces: Vercel sets NODE_ENV at
+  // *build* time but does not guarantee it in the Node.js runtime, so keying only on
+  // NODE_ENV would let a stray `AUTH0_UNAUTHENTICATED_DEV_SESSION=1` in Vercel's
+  // Production environment variables open a developer bypass on the live floor.
+  // VERCEL_ENV and an explicitly production tenant are treated as equally fatal.
+  const productionSignal =
+    env.NODE_ENV === 'production' || env.VERCEL_ENV === 'production' || env.AUTH0_ENV === 'production';
   const devBypass =
-    allowLocalDevSession !== false && env.NODE_ENV !== 'production' && env.AUTH0_UNAUTHENTICATED_DEV_SESSION === '1';
+    allowLocalDevSession !== false &&
+    !productionSignal &&
+    env.AUTH0_UNAUTHENTICATED_DEV_SESSION === '1';
+  if (env.AUTH0_UNAUTHENTICATED_DEV_SESSION === '1' && productionSignal) {
+    console.error(
+      '[auth0] AUTH0_UNAUTHENTICATED_DEV_SESSION=1 is IGNORED on a production deployment ' +
+        `(NODE_ENV=${env.NODE_ENV || 'unset'}, VERCEL_ENV=${env.VERCEL_ENV || 'unset'}, AUTH0_ENV=${env.AUTH0_ENV || 'unset'}). Remove it from the platform's environment variables.`
+    );
+  }
 
   let config = resolved.config;
   if (!config && devBypass) {

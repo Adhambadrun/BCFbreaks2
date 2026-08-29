@@ -111,10 +111,16 @@ server then answers 503 for everything rather than serving unauthenticated.
 - `/live` (the billed Gemini voice stream) is refused at the HTTP upgrade, so an
   unauthenticated socket is never created.
 - Deliberate exception, opt-in and off by default: `AUTH0_UNAUTHENTICATED_DEV_SESSION=1`
-  with `NODE_ENV!=='production'` mints a real developer session so the UI can be
-  developed without a tenant. It is refused in production (verified), it is not a
-  guest path — the gate still runs — and the branch in `createAuth()` can be deleted
-  to remove it permanently.
+  mints a real developer session so the UI can be developed without a tenant. It is
+  not a guest path — the gate still runs — and the branch in `createAuth()` can be
+  deleted to remove it permanently.
+- That bypass is refused when **any** production signal is present: `NODE_ENV`,
+  `VERCEL_ENV`, or `AUTH0_ENV=production`. Vercel sets `NODE_ENV` at build time but
+  does not guarantee it inside the Node.js runtime, so a stray
+  `AUTH0_UNAUTHENTICATED_DEV_SESSION=1` in Vercel's Production environment variables
+  could otherwise open a developer bypass on the live floor. Verified: with
+  `VERCEL_ENV=production` the request 503s, no session cookie is minted, and the
+  server logs that the flag is being ignored.
 
 ## Verification
 
