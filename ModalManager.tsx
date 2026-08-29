@@ -82,8 +82,9 @@ export const ModalManager: React.FC = () => {
     removeAgentPod,
     breaks,
     warnings,
+    wcTracking,
     endBreak,
-    setUserDirectly,
+    simulateAccessAs,
   } = useApp();
 
   // Local states for modal forms
@@ -161,7 +162,48 @@ export const ModalManager: React.FC = () => {
     }
   };
 
-  if (!activeModal) return null;
+  // Whether the active modal actually has renderable content. The overlay below is a
+  // full-screen opaque black layer — if a modal name is unknown or its guard fails
+  // (e.g. missing modalData, or a role-restricted modal like simulateAccess after the
+  // session role changed), rendering the overlay alone produces a full "black screen".
+  const isModalRenderable = (() => {
+    if (!activeModal) return false;
+    switch (activeModal) {
+      case 'warning':
+      case 'bonus':
+      case 'weather':
+      case 'replay':
+      case 'leaderboard':
+      case 'broadcast':
+      case 'handover':
+      case 'editTeam':
+      case 'addAgent':
+      case 'manageTeams':
+        return true;
+      case 'agentDetail':
+      case 'changePicture':
+      case 'blockAgent':
+      case 'agentReport':
+      case 'removeAgent':
+        return !!modalData?.agent;
+      case 'profile':
+        return !!currentUser;
+      case 'simulateAccess':
+        return currentUser?.role === 'developer';
+      default:
+        // Unknown/stale modal state: never show an empty black overlay.
+        return false;
+    }
+  })();
+
+  // Auto-close orphaned modal states so the overlay can never get stuck covering the app.
+  useEffect(() => {
+    if (activeModal && !isModalRenderable) {
+      closeModal();
+    }
+  }, [activeModal, isModalRenderable, closeModal]);
+
+  if (!activeModal || !isModalRenderable) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl overflow-y-auto">
@@ -1647,6 +1689,154 @@ export const ModalManager: React.FC = () => {
         </GlassPanel>
       )}
 
+      {/* 16. AGENT SHIFT REPORT MODAL */}
+      {activeModal === 'agentReport' && modalData?.agent && (() => {
+        const agent = modalData.agent;
+        const today = new Date().toISOString().split('T')[0];
+        const agentBreaksToday = breaks.filter(
+          b => b.agentEmail === agent.email && (b.date === today || (b.startTime && new Date(b.startTime).toISOString().split('T')[0] === today))
+        );
+        const todaySeconds = agentBreaksToday.reduce((sum, b) => sum + (b.duration || 0), 0);
+        const activeWarnings = warnings.filter(w => w.agentEmail === agent.email && w.status === 'active');
+        const wc = wcTracking[agent.email];
+        const fmt = (sec: number) => `${Math.floor(sec / 60)}m ${Math.round(sec % 60)}s`;
+
+        return (
+          <GlassPanel material="thick" className="w-full max-w-md p-6 border-2 border-cyan/40 shadow-2xl">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3 min-w-0">
+                <img
+                  src={agent.avatarUrl}
+                  alt={agent.name}
+                  className="w-11 h-11 rounded-full object-cover border-2 border-cyan/50"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="truncate">
+                  <h2 className="font-orbitron font-bold text-lg text-white tracking-wider truncate">{agent.name}</h2>
+                  <div className="text-[11px] text-zinc-400 truncate">{agent.email} &bull; {agent.role}</div>
+                </div>
+              </div>
+              <button onClick={closeModal} className="text-zinc-400 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 mb-4">
+              <div className="p-3 rounded-xl bg-black/40 border border-white/10">
+                <div className="flex items-center gap-1.5 text-[10px] font-orbitron text-zinc-400 uppercase tracking-wider">
+                  <Coffee className="w-3.5 h-3.5 text-cyan" /> Breaks Today
+                </div>
+                <div className="font-teko text-2xl text-white mt-1">{agentBreaksToday.length}</div>
+              </div>
+              <div className="p-3 rounded-xl bg-black/40 border border-white/10">
+                <div className="flex items-center gap-1.5 text-[10px] font-orbitron text-zinc-400 uppercase tracking-wider">
+                  <Clock className="w-3.5 h-3.5 text-yellow-400" /> Break Time Today
+                </div>
+                <div className="font-teko text-2xl text-white mt-1">{fmt(todaySeconds)}</div>
+              </div>
+              <div className="p-3 rounded-xl bg-black/40 border border-white/10">
+                <div className="flex items-center gap-1.5 text-[10px] font-orbitron text-zinc-400 uppercase tracking-wider">
+                  <RotateCcw className="w-3.5 h-3.5 text-cyan" /> WC Today
+                </div>
+                <div className="font-teko text-2xl text-white mt-1">
+                  {wc && wc.date === today ? fmt(wc.totalWCTime) : '0m 0s'}
+                  <span className="text-xs text-zinc-500"> / 20m</span>
+                </div>
+              </div>
+              <div className="p-3 rounded-xl bg-black/40 border border-white/10">
+                <div className="flex items-center gap-1.5 text-[10px] font-orbitron text-zinc-400 uppercase tracking-wider">
+                  <ShieldAlert className="w-3.5 h-3.5 text-crimson" /> Active Warnings
+                </div>
+                <div className={`font-teko text-2xl mt-1 ${activeWarnings.length ? 'text-red-400' : 'text-emerald-400'}`}>
+                  {activeWarnings.length}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-black/40 border border-white/10 mb-4 grid grid-cols-4 gap-2 text-center">
+              <div>
+                <div className="text-[9px] font-orbitron text-zinc-500 uppercase">Lifetime</div>
+                <div className="font-teko text-lg text-white">{agent.totalBreaksTaken ?? 0}</div>
+              </div>
+              <div>
+                <div className="text-[9px] font-orbitron text-zinc-500 uppercase">Total Time</div>
+                <div className="font-teko text-lg text-white">{agent.totalBreakTime ?? 0}m</div>
+              </div>
+              <div>
+                <div className="text-[9px] font-orbitron text-zinc-500 uppercase">Streak</div>
+                <div className="font-teko text-lg text-yellow-400">{agent.currentStreak ?? 0}🔥</div>
+              </div>
+              <div>
+                <div className="text-[9px] font-orbitron text-zinc-500 uppercase">Bonuses</div>
+                <div className="font-teko text-lg text-white">{agent.totalBonusReceived ?? 0}</div>
+              </div>
+            </div>
+
+            {activeWarnings.length > 0 && (
+              <div className="space-y-1.5 mb-4 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
+                {activeWarnings.slice(0, 3).map(w => (
+                  <div key={w.warningId} className="flex items-center justify-between p-2 rounded-lg bg-red-950/40 border border-red-900/50">
+                    <span className="text-[11px] text-red-200 truncate font-inter">{w.reason}</span>
+                    <span className="text-[9px] font-orbitron px-1.5 py-0.5 rounded bg-crimson/20 border border-crimson/40 text-red-300 shrink-0 ml-2">
+                      L{w.level}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button
+              onClick={closeModal}
+              className="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-orbitron text-xs tracking-wider transition-colors"
+            >
+              Close Report
+            </button>
+          </GlassPanel>
+        );
+      })()}
+
+      {/* 17. REMOVE AGENT POD CONFIRMATION MODAL */}
+      {activeModal === 'removeAgent' && modalData?.agent && (
+        <GlassPanel material="thick" className="w-full max-w-sm p-6 border-2 border-crimson/60 shadow-2xl">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-crimson/20 text-red-400">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <h2 className="font-orbitron font-bold text-lg text-white tracking-wider">Remove Pod?</h2>
+            </div>
+            <button onClick={closeModal} className="text-zinc-400 hover:text-white transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <p className="text-sm text-zinc-300 font-inter mb-1">
+            <span className="text-white font-semibold">{modalData.agent.name}</span>{' '}
+            <span className="text-zinc-500">({modalData.agent.email})</span> will be removed from the floor immediately.
+          </p>
+          <p className="text-xs text-zinc-500 font-inter mb-5">
+            Historical break records are preserved. The pod can be re-added later from Manage Teams.
+          </p>
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={closeModal}
+              className="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-orbitron text-xs tracking-wider transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                removeAgentPod(modalData.agent.email);
+                playSound('click');
+                closeModal();
+              }}
+              className="flex-1 py-2.5 rounded-xl bg-crimson hover:bg-red-500 text-white font-orbitron text-xs tracking-wider transition-colors"
+            >
+              Remove Pod
+            </button>
+          </div>
+        </GlassPanel>
+      )}
+
       {activeModal === 'simulateAccess' && currentUser?.role === 'developer' && (
         <GlassPanel material="thick" className="w-full max-w-md p-6 border-2 border-purple-500/50 shadow-2xl">
           <div className="flex items-center justify-between mb-6">
@@ -1669,7 +1859,7 @@ export const ModalManager: React.FC = () => {
                 key={u.id}
                 className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5 hover:border-purple-500/50 transition-colors cursor-pointer group"
                 onClick={() => {
-                  setUserDirectly(u);
+                  simulateAccessAs(u);
                   closeModal();
                 }}
               >
