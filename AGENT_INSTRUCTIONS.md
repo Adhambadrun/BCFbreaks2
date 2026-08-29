@@ -179,3 +179,47 @@ test "$(find src/app/api -name route.ts | wc -l)" -eq \
 > the module to read the config, which is what runs the eager constructor. §5a
 > and §5b are both required; §5a is the load-bearing one.
 
+---
+
+## 6. Vercel project config (`vercel.json`) — this is a Next.js app, not Vite
+
+This repo used to be a Vite + bun prototype (`legacy/`). The Vercel project
+was created against that stack, so dashboard Build & Development Settings
+still defaulted to **Framework: Vite** and **Output Directory: `dist`**.
+
+`next build` can succeed 100% and the deploy still fails with:
+
+```
+Error: No Output Directory named "dist" found after the Build completed.
+Configure the Output Directory in your Project Settings.
+Alternatively, configure vercel.json#outputDirectory.
+```
+
+That error is **not** a Next.js build failure. Next.js does not emit `dist`;
+the `@vercel/next` builder consumes `.next`. Looking for `dist` means Vercel
+is running the static/Vite collector instead of the Next.js builder.
+
+**Enforcement:** root `vercel.json` MUST pin the framework and clear the
+leftover Vite output-dir override:
+
+```json
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "outputDirectory": null
+}
+```
+
+- `framework: "nextjs"` overrides the dashboard Framework Preset so Vercel
+  uses `@vercel/next` (SSR, App Router, middleware, API routes).
+- `outputDirectory: null` unsets the dashboard `dist` override. Do **not**
+  set this to `".next"` — that would publish `.next` as a static site and
+  break every server route.
+- Do **not** set `buildCommand`. `package.json#scripts.build` already runs
+  `allow-scripts run && node scripts/prisma.mjs generate && next build`;
+  overriding it to bare `next build` would skip Prisma generate.
+- Leave `legacy/` alone. It still has `vite.config.ts` / `bun.lock` and is
+  not part of the Vercel build.
+
+Never delete `vercel.json`. Never change `framework` away from `nextjs`.
+
