@@ -30,9 +30,11 @@ import {
   FolderPlus,
   ArrowRightLeft,
   Check,
+  Settings,
+  ChevronRight,
 } from 'lucide-react';
 import { playSound } from './sound';
-import { BreakType, UserRole } from '../../types';
+import { BreakType, UserRole } from './types';
 
 const EMBLEM_PRESETS = [
   { label: 'Eagle Strike', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80' },

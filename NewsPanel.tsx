@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from './AppContext';
 import { GlassPanel } from './GlassPanel';
 import { X, Search, Zap, AlertTriangle, Gift, Crown, AlertOctagon, Smile, Sun, Cake } from 'lucide-react';
-import { SNNHeadline } from '../../types';
+import { SNNHeadline } from './types';
 
 export const NewsPanel: React.FC = () => {
   const { isNewsPanelOpen, setIsNewsPanelOpen, headlines } = useApp();

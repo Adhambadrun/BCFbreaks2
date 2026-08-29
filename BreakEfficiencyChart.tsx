@@ -12,7 +12,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { GlassPanel } from './GlassPanel';
-import { BreakRecord, ShiftConfig } from '../../types';
+import { BreakRecord, ShiftConfig } from './types';
 import { TrendingUp, Clock, AlertTriangle, CheckCircle2, Sliders, Calendar } from 'lucide-react';
 
 interface BreakEfficiencyChartProps {

@@ -20,7 +20,7 @@ import {
   Broadcast,
   AuditLogEntry,
   ShiftNote,
-} from '../types';
+} from './types';
 
 // Helper to sanitize Firestore document ID
 const sanitizeDocId = (id: string) => id.replace(/[/\\#?]/g, '_');

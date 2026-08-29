@@ -12,7 +12,7 @@ import {
   GoogleAuthProvider,
   FirebaseUser,
 } from './firebase';
-import { User, UserRole } from '../types';
+import { User, UserRole } from './types';
 import { INITIAL_USERS } from './storage';
 import firebaseConfig from './firebase-applet-config.json';
 

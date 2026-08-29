@@ -1,4 +1,4 @@
-import { User, Team, BreakRecord, WCTracking, Warning, SNNHeadline, ShiftConfig, ChatMessage, Broadcast, AuditLogEntry, ShiftNote, Competition } from '../types';
+import { User, Team, BreakRecord, WCTracking, Warning, SNNHeadline, ShiftConfig, ChatMessage, Broadcast, AuditLogEntry, ShiftNote, Competition } from './types';
 
 const STORAGE_KEYS = {
   CURRENT_USER: 'bcf_auth_current_user_v3',
