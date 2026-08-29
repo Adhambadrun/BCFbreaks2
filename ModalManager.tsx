@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useApp } from '../../context/AppContext';
-import { GlassPanel } from '../shared/GlassPanel';
+import { useApp } from './AppContext';
+import { GlassPanel } from './GlassPanel';
 import {
   X,
   AlertTriangle,
@@ -31,7 +31,7 @@ import {
   ArrowRightLeft,
   Check,
 } from 'lucide-react';
-import { playSound } from '../../lib/sound';
+import { playSound } from './sound';
 import { BreakType, UserRole } from '../../types';
 
 const EMBLEM_PRESETS = [
@@ -81,6 +81,7 @@ export const ModalManager: React.FC = () => {
     breaks,
     warnings,
     endBreak,
+    setUserDirectly,
   } = useApp();
 
   // Local states for modal forms
@@ -1640,6 +1641,46 @@ export const ModalManager: React.FC = () => {
                 );
               })}
             </div>
+          </div>
+        </GlassPanel>
+      )}
+
+      {activeModal === 'simulateAccess' && currentUser?.role === 'developer' && (
+        <GlassPanel material="thick" className="w-full max-w-md p-6 border-2 border-purple-500/50 shadow-2xl">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-purple-500/20 text-purple-400">
+                <Settings className="w-5 h-5" />
+              </div>
+              <h2 className="font-orbitron font-bold text-xl text-white tracking-wider">Simulate Access</h2>
+            </div>
+            <button onClick={closeModal} className="text-zinc-400 hover:text-white transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <p className="text-sm text-zinc-400 mb-4 font-inter">
+            Select a user below to switch your current session to their account.
+          </p>
+          <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+            {users.map(u => (
+              <div
+                key={u.id}
+                className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5 hover:border-purple-500/50 transition-colors cursor-pointer group"
+                onClick={() => {
+                  setUserDirectly(u);
+                  closeModal();
+                }}
+              >
+                <div className="flex items-center gap-3">
+                   <img src={u.avatarUrl} className="w-8 h-8 rounded-full" />
+                   <div className="text-left">
+                     <div className="text-sm font-semibold text-white">{u.name}</div>
+                     <div className="text-xs text-zinc-500">{u.role} &bull; {u.email}</div>
+                   </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-purple-400 transition-colors" />
+              </div>
+            ))}
           </div>
         </GlassPanel>
       )}

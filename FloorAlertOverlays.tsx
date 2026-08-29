@@ -1,6 +1,6 @@
 import React from 'react';
-import { useApp } from '../../context/AppContext';
-import { GlassPanel } from '../shared/GlassPanel';
+import { useApp } from './AppContext';
+import { GlassPanel } from './GlassPanel';
 import { Flame, AlertOctagon, CheckCircle2 } from 'lucide-react';
 
 export const FloorAlertOverlays: React.FC = () => {

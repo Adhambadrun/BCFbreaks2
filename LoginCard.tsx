@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useApp } from '../../context/AppContext';
-import { GlassPanel } from '../shared/GlassPanel';
+import { useApp } from './AppContext';
+import { GlassPanel } from './GlassPanel';
 import { Loader2, ShieldCheck, AlertCircle } from 'lucide-react';
-import { initGoogleOneTap } from '../../lib/authService';
+import { initGoogleOneTap } from './authService';
 
 export const LoginCard: React.FC = () => {
   const { loginWithGoogle, setUserDirectly } = useApp();

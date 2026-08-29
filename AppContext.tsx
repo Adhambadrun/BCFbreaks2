@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User, Team, BreakRecord, WCTracking, Warning, SNNHeadline, ShiftConfig, ChatMessage, Broadcast, AuditLogEntry, ShiftNote, BreakType, UserRole } from '../types';
-import { getStoredData, setStoredData, STORAGE_KEYS, INITIAL_USERS, INITIAL_TEAMS, INITIAL_BREAKS, INITIAL_WC_TRACKING, INITIAL_WARNINGS, INITIAL_HEADLINES, INITIAL_CONFIG } from '../lib/storage';
-import { playSound } from '../lib/sound';
-import { loginWithGooglePopup, logoutFirebaseAuth, isEmailAllowedToLogin } from '../lib/authService';
+import { getStoredData, setStoredData, STORAGE_KEYS, INITIAL_USERS, INITIAL_TEAMS, INITIAL_BREAKS, INITIAL_WC_TRACKING, INITIAL_WARNINGS, INITIAL_HEADLINES, INITIAL_CONFIG } from './storage';
+import { playSound } from './sound';
+import { loginWithGooglePopup, logoutFirebaseAuth, isEmailAllowedToLogin } from './authService';
 import {
   subscribeToFirestoreBreaks,
   subscribeToFirestoreWCTracking,
@@ -20,7 +20,7 @@ import {
   firestoreSaveUser,
   firestoreSaveTeam,
   firestoreDeleteTeam,
-} from '../lib/firestoreDb';
+} from './firestoreDb';
 import confetti from 'canvas-confetti';
 
 interface AppContextType {
@@ -199,9 +199,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => setStoredData(STORAGE_KEYS.AUDIT_LOGS, auditLogs), [auditLogs]);
   useEffect(() => setStoredData(STORAGE_KEYS.NOTES, shiftNotes), [shiftNotes]);
 
-  // If currentUser changes, ensure team aligns if supervisor/agent
+  // If currentUser changes, ensure team aligns if agent
   useEffect(() => {
-    if (currentUser && currentUser.role !== 'admin' && currentUser.role !== 'developer') {
+    if (currentUser && currentUser.role === 'agent') {
       setActiveTeamId(currentUser.teamId);
     }
   }, [currentUser]);
@@ -990,9 +990,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return JSON.stringify(payload, null, 2);
   };
 
-  // Derived shift state: Shift runs 10 PM (22:00) to 6 AM (06:00) Egypt Time (UTC+2 / UTC+3)
-  const isShiftActive = true; // Night shift simulated as active
-  const timeRemainingInShift = "03h 48m";
+  // Derived shift state: Shift runs 10 PM (22:00) to 6 AM (06:00) Egypt Time
+  const { isShiftActive, timeRemainingInShift } = (() => {
+    const now = new Date(new Date().toLocaleString("en-US", {timeZone: "Africa/Cairo"}));
+    const h = now.getHours();
+    const isActive = h >= 22 || h < 6;
+    let remaining = "00h 00m";
+    if (isActive) {
+      const targetTime = new Date(now);
+      if (h >= 22) targetTime.setDate(targetTime.getDate() + 1);
+      targetTime.setHours(6, 0, 0, 0);
+      const diffMs = targetTime.getTime() - now.getTime();
+      const hrs = Math.floor(diffMs / 3600000);
+      const mins = Math.floor((diffMs % 3600000) / 60000);
+      remaining = `${String(hrs).padStart(2, '0')}h ${String(mins).padStart(2, '0')}m`;
+    }
+    return { isShiftActive: isActive, timeRemainingInShift: remaining };
+  })();
   const activeTeamBreaks = breaks.filter(b => b.teamId === activeTeamId && b.isActive);
   const activeBreaksCount = activeTeamBreaks.length;
   const totalTeamBreakMinutes = breaks

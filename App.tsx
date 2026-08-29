@@ -5,24 +5,24 @@
  */
 
 import React, { useState } from 'react';
-import { AppProvider, useApp } from './context/AppContext';
-import { ShaderBackground } from './components/shared/ShaderBackground';
-import { TopHeader } from './components/header/TopHeader';
-import { SNNTicker } from './components/ticker/SNNTicker';
-import { PodGrid } from './components/pods/PodGrid';
-import { AdminDashboard } from './components/admin/AdminDashboard';
-import { SupervisorDashboard } from './components/supervisor/SupervisorDashboard';
-import { GodModePanel } from './components/developer/GodModePanel';
-import { MessagesPanel } from './components/messaging/MessagesPanel';
-import { SettingsPanel } from './components/settings/SettingsPanel';
-import { NewsPanel } from './components/ticker/NewsPanel';
-import { ModalManager } from './components/modals/ModalManager';
-import { FloorAlertOverlays } from './components/shared/FloorAlertOverlays';
-import { LoginCard } from './components/auth/LoginCard';
-import { VoiceFloorAssistant } from './components/voice/VoiceFloorAssistant';
-import { SearchGroundingWidget } from './components/intelligence/SearchGroundingWidget';
+import { AppProvider, useApp } from './AppContext';
+import { ShaderBackground } from './ShaderBackground';
+import { TopHeader } from './TopHeader';
+import { SNNTicker } from './SNNTicker';
+import { PodGrid } from './PodGrid';
+import { AdminDashboard } from './AdminDashboard';
+import { SupervisorDashboard } from './SupervisorDashboard';
+import { GodModePanel } from './GodModePanel';
+import { MessagesPanel } from './MessagesPanel';
+import { SettingsPanel } from './SettingsPanel';
+import { NewsPanel } from './NewsPanel';
+import { ModalManager } from './ModalManager';
+import { FloorAlertOverlays } from './FloorAlertOverlays';
+import { LoginCard } from './LoginCard';
+import { VoiceFloorAssistant } from './VoiceFloorAssistant';
+import { SearchGroundingWidget } from './SearchGroundingWidget';
 import { LayoutGrid, BarChart2, Shield } from 'lucide-react';
-import { playSound } from './lib/sound';
+import { playSound } from './sound';
 
 const AppContent: React.FC = () => {
   const { currentUser } = useApp();

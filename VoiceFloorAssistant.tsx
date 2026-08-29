@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GlassPanel } from '../shared/GlassPanel';
+import { GlassPanel } from './GlassPanel';
 import { Mic, MicOff, Volume2, VolumeX, Sparkles, X, Radio, MessageSquare, AlertCircle, RefreshCw } from 'lucide-react';
-import { playSound } from '../../lib/sound';
+import { playSound } from './sound';
 
 interface VoiceFloorAssistantProps {
   isOpen: boolean;

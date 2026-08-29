@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useApp } from '../../context/AppContext';
-import { GlassPanel } from '../shared/GlassPanel';
+import { useApp } from './AppContext';
+import { GlassPanel } from './GlassPanel';
 import { X, Settings, Volume2, Sliders, Shield, Palette, Download, Save } from 'lucide-react';
-import { playSound } from '../../lib/sound';
+import { playSound } from './sound';
 
 export const SettingsPanel: React.FC = () => {
   const {

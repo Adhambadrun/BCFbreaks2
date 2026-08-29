@@ -465,7 +465,7 @@ export const INITIAL_CONFIG: ShiftConfig = {
   maxWCTime: 20,
   shiftStartHour: 22,
   shiftEndHour: 6,
-  restrictedFirstHour: false, // Set to false during interactive dev demo so user can test punch in immediately
+  restrictedFirstHour: true, // published mode
   restrictedLastHour: false,
   restrictedHoursApplyToWC: false,
   masterBreakBlock: false,

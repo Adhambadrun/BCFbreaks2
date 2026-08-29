@@ -1,8 +1,8 @@
 import React from 'react';
-import { useApp } from '../../context/AppContext';
-import { GlassPanel } from '../shared/GlassPanel';
+import { useApp } from './AppContext';
+import { GlassPanel } from './GlassPanel';
 import { Zap, AlertTriangle, Gift, Crown, AlertOctagon, Smile, Sun, Cake, ChevronRight } from 'lucide-react';
-import { playSound } from '../../lib/sound';
+import { playSound } from './sound';
 
 export const SNNTicker: React.FC = () => {
   const { headlines, setIsNewsPanelOpen } = useApp();
