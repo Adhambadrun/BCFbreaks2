@@ -105,8 +105,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const match = INITIAL_USERS.find(u => u.email === saved.email);
       return match ? { ...match, ...saved } : saved;
     }
-    // Live Real User: Adham Badran (adhambadraan@gmail.com - Developer God Mode)
-    return INITIAL_USERS.find(u => u.email === 'adhambadraan@gmail.com') || null;
+    // Production must always require a real Google sign-in. Never silently enter a demo account.
+    return null;
   });
 
   const [activeTeamId, setActiveTeamId] = useState<string>(() => currentUser?.teamId || 'team_strikers');
