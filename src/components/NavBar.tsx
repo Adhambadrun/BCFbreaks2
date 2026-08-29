@@ -20,12 +20,18 @@ export default function NavBar({
   const showTeamLink = user.role !== "PREVIEWER";
 
   return (
-    <header className="relative z-10 border-b border-white/[0.06] bg-white/[0.02] backdrop-blur-xl">
+    <header className="relative z-20 border-b border-white/[0.08] bg-black/40 backdrop-blur-2xl">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-3">
-        <Link href="/" className="flex items-center gap-2.5">
-          <BrandLogo size={32} />
-          <span className="text-[15px] font-bold tracking-tight text-white">
-            BCFBreaks <span className="text-slate-500">Console</span>
+        <Link href="/" className="group flex items-center gap-2.5">
+          <BrandLogo
+            size={34}
+            className="ring-1 ring-gold/40 transition-shadow duration-300 group-hover:ring-gold/70 group-hover:shadow-[0_0_22px_rgba(255,204,0,0.35)]"
+          />
+          <span className="bg-gradient-to-r from-gold via-amber-200 to-gold bg-clip-text font-display text-[15px] font-black tracking-wide text-transparent">
+            BCFBreaks
+          </span>
+          <span className="hidden font-display text-[9px] font-semibold uppercase tracking-[0.28em] text-zinc-500 sm:inline">
+            Console
           </span>
         </Link>
 
@@ -33,7 +39,7 @@ export default function NavBar({
           {showTeamLink && (
             <Link
               href="/team"
-              className="rounded-lg px-3 py-1.5 text-slate-300 transition hover:bg-white/[0.06] hover:text-white"
+              className="rounded-lg px-3 py-1.5 font-medium text-zinc-400 transition hover:bg-gold/10 hover:text-gold"
             >
               Team
             </Link>
@@ -41,7 +47,7 @@ export default function NavBar({
           {showTeamLink && (
             <Link
               href="/requests"
-              className="rounded-lg px-3 py-1.5 text-slate-300 transition hover:bg-white/[0.06] hover:text-white"
+              className="rounded-lg px-3 py-1.5 font-medium text-zinc-400 transition hover:bg-gold/10 hover:text-gold"
             >
               Requests
             </Link>
@@ -49,10 +55,10 @@ export default function NavBar({
           {seesApprovals && (
             <Link
               href="/approvals"
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-amber-300 transition hover:bg-amber-500/10"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium text-amber-300 transition hover:bg-amber-500/10"
             >
               Approvals
-              <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+              <span className="glow-gold rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold">
                 {pendingApprovals}
               </span>
             </Link>
@@ -60,18 +66,18 @@ export default function NavBar({
           {canManage && (
             <Link
               href="/admin"
-              className="rounded-lg px-3 py-1.5 text-slate-300 transition hover:bg-white/[0.06] hover:text-white"
+              className="rounded-lg px-3 py-1.5 font-medium text-zinc-400 transition hover:bg-gold/10 hover:text-gold"
             >
               Admin
             </Link>
           )}
-          <span className="mx-2 hidden items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] py-1 pl-1 pr-3 sm:flex">
+          <span className="mx-2 hidden items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.04] py-1 pl-1 pr-3 backdrop-blur-md sm:flex">
             <Avatar name={user.name} email={user.email} avatarUrl={user.avatarUrl} size={26} />
-            <span className="max-w-[160px] truncate text-xs font-medium text-slate-200">
+            <span className="max-w-[160px] truncate text-xs font-medium text-zinc-200">
               {user.name}
             </span>
             {impersonating ? (
-              <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+              <span className="glow-gold rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold">
                 SIMULATED
               </span>
             ) : (
@@ -81,7 +87,7 @@ export default function NavBar({
         </nav>
       </div>
       {isSupervisor && !impersonating && (
-        <div className="mx-auto max-w-6xl px-5 pb-2 text-[11px] text-sky-300/80">
+        <div className="mx-auto max-w-6xl px-5 pb-2 font-display text-[10px] uppercase tracking-[0.2em] text-cyan-300/80">
           Supervisor view active
         </div>
       )}
