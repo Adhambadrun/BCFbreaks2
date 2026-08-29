@@ -1,0 +1,118 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Sales floor agent, supervisor, admin, or developer profile",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string" },
+        "teamId": { "type": "string" }
+      },
+      "required": ["id", "name", "email", "role", "teamId"]
+    },
+    "BreakRecord": {
+      "title": "BreakRecord",
+      "description": "Floor punch break session record",
+      "type": "object",
+      "properties": {
+        "breakId": { "type": "string" },
+        "agentEmail": { "type": "string" },
+        "type": { "type": "string" },
+        "startTime": { "type": "number" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["breakId", "agentEmail", "type", "startTime", "isActive"]
+    },
+    "WCTracking": {
+      "title": "WCTracking",
+      "description": "Agent daily WC usage accumulator",
+      "type": "object",
+      "properties": {
+        "agentEmail": { "type": "string" },
+        "totalSecondsUsed": { "type": "number" },
+        "visitCount": { "type": "number" }
+      },
+      "required": ["agentEmail", "totalSecondsUsed", "visitCount"]
+    },
+    "Warning": {
+      "title": "Warning",
+      "description": "Shift disciplinary warning issued to an agent",
+      "type": "object",
+      "properties": {
+        "warningId": { "type": "string" },
+        "agentEmail": { "type": "string" },
+        "level": { "type": "number" },
+        "reason": { "type": "string" }
+      },
+      "required": ["warningId", "agentEmail", "level", "reason"]
+    },
+    "SNNHeadline": {
+      "title": "SNNHeadline",
+      "description": "Sales floor news ticker and operational alert headlines",
+      "type": "object",
+      "properties": {
+        "headlineId": { "type": "string" },
+        "text": { "type": "string" },
+        "category": { "type": "string" },
+        "priority": { "type": "string" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["headlineId", "text", "category", "priority", "timestamp"]
+    },
+    "ShiftConfig": {
+      "title": "ShiftConfig",
+      "description": "Floor shift configuration settings and rally mode state",
+      "type": "object",
+      "properties": {
+        "shiftDate": { "type": "string" },
+        "rallyModeActive": { "type": "boolean" }
+      },
+      "required": ["shiftDate", "rallyModeActive"]
+    },
+    "Broadcast": {
+      "title": "Broadcast",
+      "description": "High-priority floor-wide announcement broadcast",
+      "type": "object",
+      "properties": {
+        "broadcastId": { "type": "string" },
+        "message": { "type": "string" },
+        "senderEmail": { "type": "string" },
+        "priority": { "type": "string" }
+      },
+      "required": ["broadcastId", "message", "senderEmail", "priority"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles on the sales floor"
+    },
+    "/breaks/{breakId}": {
+      "schema": "BreakRecord",
+      "description": "Punch records for floor breaks"
+    },
+    "/wcTracking/{recordId}": {
+      "schema": "WCTracking",
+      "description": "WC time tracking"
+    },
+    "/warnings/{warningId}": {
+      "schema": "Warning",
+      "description": "Floor warning records"
+    },
+    "/headlines/{headlineId}": {
+      "schema": "SNNHeadline",
+      "description": "SNN live news ticker headlines"
+    },
+    "/config/{configId}": {
+      "schema": "ShiftConfig",
+      "description": "Floor operational configuration"
+    },
+    "/broadcasts/{broadcastId}": {
+      "schema": "Broadcast",
+      "description": "Broadcast announcements"
+    }
+  }
+}

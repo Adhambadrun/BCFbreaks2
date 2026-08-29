@@ -1,0 +1,10 @@
+{
+  "name": "BCFBreaks",
+  "description": "Premium multi-team sales-floor break punch-in/punch-out web app featuring Neo-Apple Liquid Glass material system, military-precision shift tracking, and comprehensive role-based access control.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
