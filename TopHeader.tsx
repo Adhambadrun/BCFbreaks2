@@ -379,6 +379,21 @@ export const TopHeader: React.FC = () => {
                     </div>
 
                     {/* Nav Actions */}
+                    {/* Only the developer account may switch into another account. */}
+                    {currentUser?.role === 'developer' && (
+                      <button
+                        onClick={() => {
+                          openModal('simulateAccess');
+                          setIsDropdownOpen(false);
+                          playSound('click');
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-zinc-800/70 text-xs font-inter text-zinc-200 transition-all"
+                      >
+                        <Settings className="w-4 h-4 text-purple-400" />
+                        Simulate Access
+                      </button>
+                    )}
+
                     <button
                       onClick={() => {
                         openModal('profile');
