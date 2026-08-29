@@ -1,26 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth0 } from "./lib/auth0";
+// Edge-safe session evaluation. The SDK's full server client is Node-only
+// (node:crypto HKDF / streams) and cannot compile for the Edge runtime, so the
+// middleware uses this WebCrypto-native `getSession` shim that decrypts the
+// very same `__session` JWE the Node SDK issues (see src/lib/edge-session.ts).
+// (Historical `@auth0/nextjs-auth0/edge` import — that subpath no longer
+// exists in SDK v4, which is exactly what broke Vercel builds before.)
+import { getSession } from "@/lib/edge-session";
 
 /**
  * Zero-trust middleware — LIVE production mode. There is no demo route, no
- * mock page, no guest browsing: EVERY request must carry an Auth0 session or
- * it is bounced straight into the Auth0 Universal Login.
+ * mock page, no guest browsing: EVERY request must carry a valid Auth0
+ * session or it is bounced into the Auth0 Universal Login at
+ * `/api/auth/login` (NEVER `/auth/login` — that path is not an auth endpoint
+ * in this application and 404s on Vercel).
  *
- * Route fix (the Vercel 404 bug): unauthenticated visitors are redirected to
- * `/api/auth/login` — the SDK-configured login route handled by
- * `auth0.middleware()` — and NEVER to `/auth/login`, which is not a route in
- * this application.
+ * Pass-through (public) surfaces: the Auth0 route mount, the legacy
+ * `/auth/*` compatibility forwarder, and `/api/public/*` health endpoints.
+ * Static assets are excluded via the matcher below.
  */
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const pathname = request.nextUrl.pathname;
 
-  // Auth0 SDK routes (login/logout/callback/profile/access-token/backchannel)
-  // are served by the SDK middleware itself.
-  if (pathname.startsWith("/api/auth")) {
-    return await auth0.middleware(request);
+  if (
+    pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/api/public")
+  ) {
+    return NextResponse.next();
   }
 
-  const session = await auth0.getSession(request);
+  const response = NextResponse.next();
+  const session = await getSession(request, response);
 
   if (!session || !session.user) {
     // Redirect to the Auth0 login API endpoint to prevent Vercel 404 errors,
@@ -33,11 +43,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  return await auth0.middleware(request);
+  return response;
 }
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
+    "/((?!_next/static|_next/image|favicon.ico|logo.png|icon.png|apple-icon.png|sitemap.xml|robots.txt).*)",
   ],
 };

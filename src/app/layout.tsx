@@ -3,8 +3,13 @@ import { Auth0Provider } from "@auth0/nextjs-auth0/client";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Team Breaks & Shift Management App",
-  description: "Live production team break and attendance system",
+  title: "BCFBreaks — Team Breaks & Shift Management",
+  description: "Live production team break, attendance and shift management system",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

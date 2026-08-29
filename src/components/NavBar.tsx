@@ -1,22 +1,31 @@
 import Link from "next/link";
 import Avatar from "./Avatar";
+import BrandLogo from "./BrandLogo";
 import RoleBadge from "./RoleBadge";
 import type { User } from "@/generated/prisma/client";
 
-export default function NavBar({ user, impersonating }: { user: User; impersonating: boolean }) {
+export default function NavBar({
+  user,
+  impersonating,
+  pendingApprovals = 0,
+}: {
+  user: User;
+  impersonating: boolean;
+  pendingApprovals?: number;
+}) {
   const canManage = user.role === "DEV" || user.role === "ADMIN";
   const isSupervisor = user.role === "SUPERVISOR";
+  const seesApprovals =
+    !impersonating && (canManage || isSupervisor) && pendingApprovals > 0;
   const showTeamLink = user.role !== "PREVIEWER";
 
   return (
     <header className="relative z-10 border-b border-white/[0.06] bg-white/[0.02] backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-3">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-sm font-black text-white">
-            B
-          </span>
+          <BrandLogo size={32} />
           <span className="text-[15px] font-bold tracking-tight text-white">
-            BCF Breaks <span className="text-slate-500">Console</span>
+            BCFBreaks <span className="text-slate-500">Console</span>
           </span>
         </Link>
 
@@ -27,6 +36,25 @@ export default function NavBar({ user, impersonating }: { user: User; impersonat
               className="rounded-lg px-3 py-1.5 text-slate-300 transition hover:bg-white/[0.06] hover:text-white"
             >
               Team
+            </Link>
+          )}
+          {showTeamLink && (
+            <Link
+              href="/requests"
+              className="rounded-lg px-3 py-1.5 text-slate-300 transition hover:bg-white/[0.06] hover:text-white"
+            >
+              Requests
+            </Link>
+          )}
+          {seesApprovals && (
+            <Link
+              href="/approvals"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-amber-300 transition hover:bg-amber-500/10"
+            >
+              Approvals
+              <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+                {pendingApprovals}
+              </span>
             </Link>
           )}
           {canManage && (

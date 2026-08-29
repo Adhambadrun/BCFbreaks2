@@ -37,28 +37,104 @@ model User {
   team           Team?        @relation("TeamMembers", fields: [teamId], references: [id])
   supervisedTeam Team?        @relation("TeamSupervisor")
   attendances    Attendance[]
+  clarifications ClarificationRequest[]
+  decided        ClarificationRequest[] @relation("ClarificationDecidedBy")
+  warnings       Warning[]
+  requests       RequestRecord[]
   uploadedAssets Asset[]      @relation("AssetUploader")
   createdAt      DateTime     @default(now())
 }
 
 model Team {
-  id           String   @id @default(uuid())
-  name         String   @unique
-  logoUrl      String?
-  supervisorId String?  @unique
-  supervisor   User?    @relation("TeamSupervisor", fields: [supervisorId], references: [id])
-  members      User[]   @relation("TeamMembers")
-  createdAt    DateTime @default(now())
+  id                String   @id @default(uuid())
+  name              String   @unique
+  logoUrl           String?
+  /// Default scheduled shift start ("HH:MM", operations timezone) used by the
+  /// 15-minute latency engine to evaluate clock-ins for this team.
+  shiftStartDefault String   @default("09:00")
+  supervisorId      String?  @unique
+  supervisor        User?    @relation("TeamSupervisor", fields: [supervisorId], references: [id])
+  members           User[]   @relation("TeamMembers")
+  createdAt         DateTime @default(now())
 }
 
 model Attendance {
-  id       String    @id @default(uuid())
-  userId   String
-  user     User      @relation(fields: [userId], references: [id])
-  clockIn  DateTime  @default(now())
-  clockOut DateTime?
+  id             String    @id @default(uuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id])
+  clockIn        DateTime  @default(now())
+  clockOut       DateTime?
+  /// Scheduled shift start this clock-in was measured against (latency math).
+  scheduledStart DateTime?
+  /// Minutes between scheduledStart and clockIn (> 0 only when late).
+  lateMinutes    Int       @default(0)
+  /// True once an APPROVED clarification cleared the late flag (no penalty).
+  latencyCleared Boolean   @default(false)
+  clarifications ClarificationRequest[]
 
   @@index([userId, clockOut])
+}
+
+/// Written clarification submitted by an agent for a flagged-late shift.
+/// PENDING routes to the Approvals queue (Admins, Supervisors, Developer);
+/// APPROVED clears the latency flag; DECLINED logs a System Warning.
+model ClarificationRequest {
+  id           String              @id @default(uuid())
+  attendanceId String
+  attendance   Attendance          @relation(fields: [attendanceId], references: [id])
+  userId       String
+  user         User                @relation(fields: [userId], references: [id])
+  message      String
+  status       ClarificationStatus @default(PENDING)
+  decidedById  String?
+  decidedBy    User?               @relation("ClarificationDecidedBy", fields: [decidedById], references: [id])
+  decisionNote String?
+  decidedAt    DateTime?
+  createdAt    DateTime            @default(now())
+
+  @@index([status, createdAt])
+  @@index([userId])
+}
+
+/// Official warnings on a user profile. SYSTEM warnings are issued
+/// automatically by the latency engine (declined / unsubmitted clarifications);
+/// MANUAL warnings are issued in-app by Admins, Supervisors or the Developer.
+model Warning {
+  id        String      @id @default(uuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  reason    String
+  kind      WarningKind @default(SYSTEM)
+  issuedBy  String      @default("SYSTEM")
+  createdAt DateTime    @default(now())
+
+  @@index([userId, createdAt])
+}
+
+/// Persistent audit trail of request emails dispatched from the in-app
+/// Email Template Dispatcher to attendance.cai@bcflights.com.
+model RequestRecord {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  kind      String
+  subject   String
+  body      String
+  recipient String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+enum ClarificationStatus {
+  PENDING
+  APPROVED
+  DECLINED
+}
+
+enum WarningKind {
+  SYSTEM
+  MANUAL
 }
 
 /// Persistent binary storage for user avatars and team logos.

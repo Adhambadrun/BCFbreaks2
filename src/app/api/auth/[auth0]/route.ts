@@ -1,25 +1,26 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { auth0 } from "@/lib/auth0";
 
 /**
- * Structure-preserving handler for /api/auth/[auth0].
+ * Auth0 SDK route mount — serves every authentication endpoint under
+ * `/api/auth/*` (login, logout, callback, profile, access-token,
+ * backchannel-logout) by delegating to `auth0.middleware()`.
  *
- * Auth0 Next.js SDK v4 note: this SDK serves every auth route (login, logout,
- * callback, profile, access-token, backchannel-logout) from
- * `auth0.middleware()` in `src/middleware.ts`, which intercepts requests to
- * the configured `/api/auth/*` paths BEFORE they ever reach a route handler
- * (the v3 `auth0.handleAuth()` used here historically no longer exists in
- * v4). This handler therefore only ever sees requests that bypassed
- * middleware — i.e. never in normal operation — and exists to fail loudly
- * rather than 404 silently.
+ * Runtime note: this handler runs in the NODE runtime (see `export const
+ * runtime` below) where the SDK's full server client is safe to execute — the
+ * Node-only code paths (node:crypto HKDF, CompressionStream consumers) that
+ * break Edge builds are fine here, and `serverExternalPackages` in
+ * next.config.js keeps the SDK external to the server bundle.
+ *
+ * Zero-trust flow: unauthenticated visitors are redirected by
+ * `src/middleware.ts` to `/api/auth/login`, which lands HERE and starts the
+ * Auth0 Universal Login. `/auth/login` (legacy path) is forwarded to this
+ * flow by `src/app/auth/login/page.tsx`.
  */
-export async function GET() {
-  return NextResponse.json(
-    {
-      error: "auth_route_handled_by_middleware",
-      hint: "Auth0 routes are served by auth0.middleware() — see src/middleware.ts. Login lives at /api/auth/login.",
-    },
-    { status: 404 },
-  );
+export const runtime = "nodejs";
+
+async function handler(request: NextRequest): Promise<NextResponse> {
+  return auth0.middleware(request);
 }
 
-export const POST = GET;
+export { handler as GET, handler as POST };

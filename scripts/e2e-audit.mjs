@@ -244,13 +244,140 @@ async function main() {
   check("state reverted to spec (Albert pending again)", albertReset === null);
 
   // ----------------------------------------------------------------------
-  console.log("\n== 8. Cleanup test artifacts ==");
+  console.log("\n== 8. 15-minute latency engine, clarifications & warnings (live) ==");
+
+  // Locate the dev's open attendance (created by the §2/§5 dashboard render).
+  const openRow = (
+    await q(`SELECT id, "clockIn" FROM "Attendance" WHERE "userId"=$1 AND "clockOut" IS NULL ORDER BY "clockIn" DESC LIMIT 1`, [devUser.id])
+  ).rows[0];
+  check("dev has an open attendance record", Boolean(openRow));
+
+  // 8a. Within the 15-minute company leeway: NO latency indicator at all.
+  await q(`UPDATE "Attendance" SET "scheduledStart" = "clockIn" - interval '10 minutes', "lateMinutes" = 10, "latencyCleared" = false WHERE id=$1`, [openRow.id]);
+  const leewayPage = await get("/", dev);
+  check("≤15 min late: NO latency review card (company leeway)", !leewayPage.body.includes("Shift Latency Review"), "indicator leaked");
+  check("≤15 min late: NO late badge", !leewayPage.body.includes("LATE +"), "badge leaked");
+
+  // 8b. Past the leeway: automatic LATE flag + written clarification prompt.
+  await q(`UPDATE "Attendance" SET "scheduledStart" = "clockIn" - interval '60 minutes', "lateMinutes" = 60 WHERE id=$1`, [openRow.id]);
+  const latePage = await get("/", dev);
+  // React SSR splits adjacent text nodes with <!-- --> markers — strip them
+  // so policy text like "+1h" can be matched on the rendered output.
+  const lateBody = latePage.body.replace(/<!-- -->/g, "");
+  check(">15 min late: latency review card appears", lateBody.includes("Shift Latency Review"));
+  check(">15 min late: LATE flag displayed", lateBody.includes("LATE"));
+  check(">15 min late: +1h shift penalty surfaced", lateBody.includes("+1h"));
+  check(">15 min late: 1h late requires 2h coverage surfaced", lateBody.includes("2h"));
+  check(">15 min late: clarification prompt shown", latePage.body.includes("Submit Clarification for Approval"));
+
+  // 8c. Agent submits the written clarification -> Pending Approvals queue.
+  const clarify = await postJson("/api/attendance/clarification", dev, {
+    attendanceId: openRow.id,
+    message: "Metro line suspension; arrived as soon as service resumed.",
+  });
+  check("clarification submits to PENDING", clarify.status === 200, clarify.body);
+  const clarificationId = (() => {
+    try { return JSON.parse(clarify.body).clarificationId; } catch { return null; }
+  })();
+  const pendingQueue = (await q(`SELECT count(*)::int AS n FROM "ClarificationRequest" WHERE status='PENDING'`)).rows[0].n;
+  check("clarification persisted in approvals queue", pendingQueue > 0 && Boolean(clarificationId));
+
+  const agentDecide = await postJson(`/api/clarification/${clarificationId}/decision`, agent, { action: "APPROVE" }, "POST");
+  check("AGENT forbidden from approval decisions", agentDecide.status === 403, `status=${agentDecide.status}`);
+
+  const pendingPage = await get("/", dev);
+  check("dashboard shows PENDING APPROVAL state", pendingPage.body.includes("PENDING APPROVAL"));
+  check("prompt hidden once clarification submitted", !pendingPage.body.includes("Submit Clarification for Approval"));
+
+  // 8d. APPROVED -> latency flag clears without penalty.
+  const approve = await postJson(`/api/clarification/${clarificationId}/decision`, admin, { action: "APPROVE", note: "Verified with transit authority." });
+  check("admin approves clarification", approve.status === 200, approve.body);
+  const clearedRow = (await q(`SELECT "latencyCleared" FROM "Attendance" WHERE id=$1`, [openRow.id])).rows[0];
+  check("approval clears the latency flag in DB", clearedRow.latencyCleared === true);
+  const clearedPage = await get("/", dev);
+  check("dashboard shows cleared status (no penalty)", clearedPage.body.includes("Cleared — No Penalty"));
+  const devWarnings = (await q(`SELECT count(*)::int AS n FROM "Warning" WHERE "userId"=$1`, [devUser.id])).rows[0].n;
+  check("no warning issued on the approved path", devWarnings === 0);
+
+  // 8e. DECLINED -> automatic System Warning on the profile.
+  const lamarRow = (
+    await q(`SELECT id FROM "Attendance" WHERE "userId"=$1 AND "clockOut" IS NULL ORDER BY "clockIn" DESC LIMIT 1`, [agentUser.id])
+  ).rows[0];
+  await q(`UPDATE "Attendance" SET "scheduledStart" = "clockIn" - interval '45 minutes', "lateMinutes" = 45 WHERE id=$1`, [lamarRow.id]);
+  const agentClarify = await postJson("/api/attendance/clarification", agent, {
+    attendanceId: lamarRow.id,
+    message: "Overslept, sorry.",
+  });
+  check("agent clarification submits", agentClarify.status === 200, agentClarify.body);
+  const agentClarificationId = (() => {
+    try { return JSON.parse(agentClarify.body).clarificationId; } catch { return null; }
+  })();
+  const decline = await postJson(`/api/clarification/${agentClarificationId}/decision`, admin, { action: "DECLINE", note: "No supporting evidence." });
+  check("admin declines clarification", decline.status === 200, decline.body);
+  const declinedWarning = (
+    await q(`SELECT count(*)::int AS n FROM "Warning" WHERE "userId"=$1 AND "reason" LIKE '%DECLINED%'`, [agentUser.id])
+  ).rows[0].n;
+  check("declined clarification logs automatic System Warning", declinedWarning > 0);
+
+  // 8f. Never submitted (clock-out with unanswered late flag) -> System Warning.
+  await q(
+    `INSERT INTO "Attendance" (id, "userId", "clockIn", "scheduledStart", "lateMinutes") VALUES (gen_random_uuid()::text, $1, now() - interval '30 minutes', now() - interval '75 minutes', 45)`,
+    [agentUser.id],
+  );
+  const agentOut = await postJson("/api/attendance/clock-out", agent);
+  const outBody = (() => { try { return JSON.parse(agentOut.body); } catch { return {}; } })();
+  check("clock-out with unsubmitted clarification warns", agentOut.status === 200 && outBody.warningsIssued === 1, agentOut.body);
+  const unsubmittedWarning = (
+    await q(`SELECT count(*)::int AS n FROM "Warning" WHERE "userId"=$1 AND "reason" LIKE '%never submitted%'`, [agentUser.id])
+  ).rows[0].n;
+  check("unsubmitted-clarification System Warning persisted", unsubmittedWarning > 0);
+
+  // 8g. Approvals page renders the queue for managers.
+  const approvalsPage = await get("/approvals", admin);
+  check("approvals page renders for admin", approvalsPage.status === 200, `status=${approvalsPage.status}`);
+  const agentApprovals = await get("/approvals", agent);
+  check("approvals page restricted for agents", agentApprovals.status === 200 && agentApprovals.body.includes("Approvals are restricted"));
+
+  // ----------------------------------------------------------------------
+  console.log("\n== 9. In-app email engine (templates -> attendance.cai@bcflights.com) ==");
+  const anonMail = await get("/api/email/dispatch");
+  check("email dispatch blocked for anonymous", anonMail.status === 307 || anonMail.status === 401, `status=${anonMail.status}`);
+  const dispatch = await postJson("/api/email/dispatch", agent, {
+    to: "attendance.cai@bcflights.com",
+    from: "lamar@bcflights.com",
+    subject: "[SWAP DAY REQUEST] - Lamar",
+    body: "Dear Management,\n\nI would like to request a Swap Day.\nAgent: Lamar\nCoverage Date: 2026-09-05\nCovering Agent: Zayn\nLocation (Office/WFH): Office\n\nThank you.",
+  });
+  const dispatchBody = (() => { try { return JSON.parse(dispatch.body); } catch { return {}; } })();
+  check("email dispatch accepted", dispatch.status === 200 && dispatchBody.ok === true, dispatch.body);
+  check("dispatch recorded on persistent ledger", Boolean(dispatchBody.recordId));
+  const mailRecord = (await q(`SELECT count(*)::int AS n FROM "RequestRecord" WHERE "recipient"='attendance.cai@bcflights.com' AND "kind"='SWAP_DAY'`)).rows[0].n;
+  check("RequestRecord targets attendance.cai@bcflights.com", mailRecord > 0);
+  const requestsPage = await get("/requests", agent);
+  check("requests page renders the dispatcher", requestsPage.status === 200 && requestsPage.body.includes("In-App Email Dispatcher"));
+  check("requests page lists all four templates", ["SWAP DAY", "LEAVE", "WFH", "SHIFT CHANGE"].every((k) => requestsPage.body.includes(k)));
+  check("requests page surfaces policy rules (45-day swap, $100 No Show)", requestsPage.body.includes("45 days") && requestsPage.body.includes("$100"), "policy text missing");
+
+  // ----------------------------------------------------------------------
+  console.log("\n== 10. Branding & assets (logo on tab + gates) ==");
+  const logoRes = await fetch(`${BASE}/logo.png`);
+  check("/logo.png serves as an image", logoRes.status === 200 && (logoRes.headers.get("content-type") ?? "").startsWith("image/"), logoRes.headers.get("content-type"));
+  const devDash = await get("/", dev);
+  check("browser tab icons point at /logo.png", devDash.body.includes('href="/logo.png"'), "missing icon metadata");
+  check("nav bar carries the brand logo", devDash.body.includes("BCFBreaks Logo"));
+
+  // ----------------------------------------------------------------------
+  console.log("\n== 11. Cleanup test artifacts ==");
   await q(`UPDATE "User" SET "avatarUrl"=NULL WHERE id=$1`, [agentUser.id]);
   await q(`UPDATE "Team" SET "logoUrl"=NULL WHERE id=$1`, [strikers.id]);
   await q(`DELETE FROM "Asset"`);
+  await q(`DELETE FROM "ClarificationRequest"`);
+  await q(`DELETE FROM "Warning"`);
+  await q(`DELETE FROM "RequestRecord"`);
   await q(`DELETE FROM "Attendance" WHERE "userId" IN (SELECT id FROM "User" WHERE email='external@gmail.com')`);
+  await q(`DELETE FROM "Attendance" WHERE "userId" IN ($1, $2)`, [devUser.id, agentUser.id]);
   await q(`DELETE FROM "User" WHERE email='external@gmail.com'`);
-  check("upload/impersonation artifacts cleaned", true);
+  check("upload/impersonation/latency artifacts cleaned", true);
 
   console.log(
     failures === 0
