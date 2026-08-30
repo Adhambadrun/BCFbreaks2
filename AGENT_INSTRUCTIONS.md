@@ -136,9 +136,17 @@ the build/deploy breaks later at runtime. Do **not** delete the field.
   env -u DATABASE_URL -u AUTH0_DOMAIN -u AUTH0_CLIENT_ID \
       -u AUTH0_CLIENT_SECRET -u AUTH0_SECRET -u APP_BASE_URL npm run build
   ```
-- `npm run build` runs `prisma generate` (no live DB needed) and then
-  `next build`. Pages and API routes are all `force-dynamic` / server-rendered
-  (§5), so build-time DB connectivity is **not** required.
+- `npm run build` runs `prisma generate` (no live DB needed), then
+  `scripts/migrate-if-set.mjs`, then `next build`. Pages and API routes are
+  all `force-dynamic` / server-rendered (§5), so build-time DB connectivity is
+  **not** required.
+- `scripts/migrate-if-set.mjs` runs `npx prisma migrate deploy` **only when
+  `DATABASE_URL` is set** (deployed envs), so pending migrations are applied
+  automatically on every deploy and the generated client can never outrun the
+  live schema. With `DATABASE_URL` unset it skips cleanly (zero-env rule
+  above). If `DATABASE_URL` IS set, a `migrate deploy` failure fails the build
+  by design — do not weaken that; otherwise the deploy silently ships a
+  mismatched schema (same crash class as the 2026-08-30 `fullName` outage).
 - These are **runtime** variables, required for real requests, and are supplied
   by the platform per environment — set in the Vercel project env (Production
   *and* Preview), never in git:
