@@ -63,9 +63,9 @@ export default function AdminUsersTable({
   }
 
   return (
-    <section className="mt-6 overflow-hidden rounded-3xl border border-white/[0.08] bg-white/[0.04] shadow-xl backdrop-blur-2xl">
+    <section className="liquid-glass--thick mt-6 overflow-hidden">
       <div className="flex items-center justify-between px-6 pt-5">
-        <h2 className="text-base font-bold text-white">Users &amp; Roles</h2>
+        <h2 className="font-display text-base font-black uppercase tracking-widest text-zinc-100">Users &amp; Roles</h2>
         {message && (
           <span
             className={`text-xs ${message.kind === "ok" ? "text-emerald-400" : "text-rose-400"}`}
@@ -78,7 +78,7 @@ export default function AdminUsersTable({
       <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[720px] text-left text-[13px]">
           <thead>
-            <tr className="border-b border-white/[0.06] text-[10px] uppercase tracking-wider text-slate-500">
+            <tr className="border-b border-white/[0.06] text-[10px] uppercase tracking-wider text-zinc-500">
               <th className="px-6 py-2 font-semibold">Member</th>
               <th className="px-3 py-2 font-semibold">Role</th>
               <th className="px-3 py-2 font-semibold">Team</th>
@@ -94,13 +94,13 @@ export default function AdminUsersTable({
               return (
                 <tr key={u.id} className="border-b border-white/[0.04] last:border-0">
                   <td className="px-6 py-2.5">
-                    <span className="block font-medium text-slate-100">
+                    <span className="block font-medium text-zinc-100">
                       {u.name}
                       {isSelf && <span className="ml-2 text-[10px] text-slate-500">(you)</span>}
                     </span>
-                    <span className="block text-[10px] text-slate-500">{u.email}</span>
+                    <span className="block text-[10px] text-zinc-500">{u.email}</span>
                     {u.supervisedTeamName && (
-                      <span className="block text-[10px] text-sky-400/80">
+                      <span className="block text-[10px] text-cyan-300/80">
                         supervises: {u.supervisedTeamName}
                       </span>
                     )}
@@ -110,7 +110,7 @@ export default function AdminUsersTable({
                       value={draft.role}
                       disabled={isSelf}
                       onChange={(e) => update(u.id, { role: e.target.value })}
-                      className="rounded-lg border border-white/10 bg-slate-900 px-2 py-1.5 text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-50"
+                      className="rounded-lg border border-white/10 border-white/10 bg-black/40 px-2 py-1.5 text-xs text-zinc-100 focus:outline-none focus:ring-2 focus:ring-gold/50 disabled:opacity-50"
                     >
                       {ROLE_OPTIONS.map((r) => (
                         <option key={r} value={r}>
@@ -123,7 +123,7 @@ export default function AdminUsersTable({
                     <select
                       value={draft.teamId}
                       onChange={(e) => update(u.id, { teamId: e.target.value })}
-                      className="max-w-[170px] rounded-lg border border-white/10 bg-slate-900 px-2 py-1.5 text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                      className="max-w-[170px] rounded-lg border border-white/10 border-white/10 bg-black/40 px-2 py-1.5 text-xs text-zinc-100 focus:outline-none focus:ring-2 focus:ring-gold/50"
                     >
                       <option value="">— No team —</option>
                       {teams.map((t) => (
@@ -137,7 +137,7 @@ export default function AdminUsersTable({
                     <button
                       onClick={() => save(u)}
                       disabled={!dirty || savingId === u.id || isSelf}
-                      className="rounded-lg border border-violet-500/30 bg-violet-500/15 px-3 py-1.5 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/25 disabled:opacity-30"
+                      className="rounded-lg border border-gold/30 bg-gold/15 px-3 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider text-gold transition hover:bg-gold/25 disabled:opacity-30"
                     >
                       {savingId === u.id ? "Saving..." : "Save"}
                     </button>
@@ -148,7 +148,7 @@ export default function AdminUsersTable({
           </tbody>
         </table>
       </div>
-      <p className="px-6 pb-4 pt-2 text-[11px] text-slate-600">
+      <p className="px-6 pb-4 pt-2 text-[11px] text-zinc-600">
         Assigning a SUPERVISOR to a team makes them that team&apos;s official supervisor — this
         resolves &quot;N/A — pending assignment&quot; states.
       </p>

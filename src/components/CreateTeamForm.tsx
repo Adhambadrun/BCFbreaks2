@@ -44,12 +44,12 @@ export default function CreateTeamForm({
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Team name (e.g. Titans)"
-        className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500"
+        className="rounded-xl border border-white/10 bg-zinc-900 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-gold/50"
       />
       <select
         value={supervisorId}
         onChange={(e) => setSupervisorId(e.target.value)}
-        className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500"
+        className="rounded-xl border border-white/10 bg-zinc-900 px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-gold/50"
       >
         <option value="">— No supervisor yet —</option>
         {supervisors.map((s) => (
@@ -61,7 +61,7 @@ export default function CreateTeamForm({
       <button
         type="submit"
         disabled={busy || name.trim().length < 2}
-        className="rounded-xl border border-violet-500/30 bg-violet-500/15 px-4 py-2.5 text-sm font-semibold text-violet-200 transition hover:bg-violet-500/25 disabled:opacity-40"
+        className="rounded-xl border border-gold/40 bg-gold/15 px-4 py-2.5 font-display text-xs font-bold uppercase tracking-widest text-gold transition hover:bg-gold/25 hover:shadow-[0_0_20px_rgba(255,204,0,0.25)] disabled:opacity-40"
       >
         {busy ? "Creating..." : "Create Team"}
       </button>
