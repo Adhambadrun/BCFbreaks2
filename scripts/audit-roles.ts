@@ -9,6 +9,7 @@ import {
   getSupervisorTeamForEmail,
   type AppRole,
 } from "../src/lib/permissions";
+import { ROSTER } from "../src/lib/roster";
 import {
   evaluateLatency,
   owesSystemWarning,
@@ -33,34 +34,25 @@ function check(label: string, actual: unknown, expected: unknown) {
 }
 
 // ---------------------------------------------------------------------------
-// 1. Role & email resolution matrix (from the spec's verification protocol)
+// 1. Role & email resolution matrix (derived from the canonical roster)
 // ---------------------------------------------------------------------------
-const MATRIX: Array<[string, AppRole]> = [
-  ["adhambadraan@gmail.com", "DEV"],
-  ["meredith@bcflights.com", "ADMIN"],
-  ["atlas@bcflights.com", "ADMIN"],
-  ["jolene@bcflights.com", "ADMIN"],
-  ["naomi@bcflights.com", "ADMIN"],
-  ["jay@bcflights.com", "SUPERVISOR"],
-  ["watkins@bcflights.com", "SUPERVISOR"],
-  ["albert@bcflights.com", "SUPERVISOR"],
-  ["amir@bcflights.com", "SUPERVISOR"],
-  ["solomon@bcflights.com", "AGENT"],
-  ["zayn@bcflights.com", "AGENT"],
-  ["leo@bcflights.com", "AGENT"],
-  ["lamar@bcflights.com", "AGENT"],
-  ["fabiola@bcflights.com", "AGENT"],
-  ["shay@bcflights.com", "AGENT"],
-  ["wesley@bcflights.com", "AGENT"],
-  ["eric@bcflights.com", "AGENT"],
-  ["thomas@bcflights.com", "AGENT"],
-  ["any_other@bcflights.com", "AGENT"],
-  ["external@gmail.com", "PREVIEWER"],
-  ["random@outlook.com", "PREVIEWER"],
-];
+const ROSTER_ROLE: Record<string, AppRole> = {
+  "Admin / Manager": "ADMIN",
+  Developer: "DEV",
+  "Independent Agent": "INDEPENDENT",
+  Supervisor: "SUPERVISOR",
+  "Team Member": "AGENT",
+};
 
 console.log("\n== Role & email resolution ==");
-for (const [email, role] of MATRIX) check(email, getRoleForEmail(email), role);
+for (const entry of ROSTER) {
+  check(entry.email, getRoleForEmail(entry.email), ROSTER_ROLE[entry.role]);
+}
+
+// Automatic domain rule for non-roster corporate addresses.
+check("any_other@bcflights.com", getRoleForEmail("any_other@bcflights.com"), "AGENT");
+check("external@gmail.com", getRoleForEmail("external@gmail.com"), "PREVIEWER");
+check("random@outlook.com", getRoleForEmail("random@outlook.com"), "PREVIEWER");
 
 // Case-insensitivity + trimming
 check("Case: LAMAR@BCFLIGHTS.COM", getRoleForEmail("LAMAR@BCFLIGHTS.COM"), "AGENT");
@@ -73,10 +65,45 @@ check("Spoof: me@notbcflights.com", getRoleForEmail("me@notbcflights.com"), "PRE
 
 // Supervisor team assignments
 console.log("\n== Supervisor team assignments ==");
-check("Jay -> Strikers", getSupervisorTeamForEmail("jay@bcflights.com"), "Strikers");
-check("Watkins -> Wizards", getSupervisorTeamForEmail("watkins@bcflights.com"), "Wizards");
-check("Albert -> pending (null)", getSupervisorTeamForEmail("albert@bcflights.com"), null);
-check("Amir -> pending (null)", getSupervisorTeamForEmail("amir@bcflights.com"), null);
+check("Jay -> CAI 2", getSupervisorTeamForEmail("jay@bcflights.com"), "CAI 2");
+check("Albert -> CAI 3", getSupervisorTeamForEmail("albert@bcflights.com"), "CAI 3");
+check("Watkins -> CAI 4", getSupervisorTeamForEmail("watkins@bcflights.com"), "CAI 4");
+check("Amir -> CAI 5", getSupervisorTeamForEmail("amir@bcflights.com"), "CAI 5");
+check("Dominick (independent) -> no team", getSupervisorTeamForEmail("dominick@bcflights.com"), null);
+
+// ---------------------------------------------------------------------------
+// 1b. Roster data integrity (the data-management invariants)
+// ---------------------------------------------------------------------------
+console.log("\n== Roster data integrity ==");
+check("roster contains 47 people", ROSTER.length, 47);
+
+const emails = ROSTER.map((e) => e.email.toLowerCase());
+check("no duplicate emails", new Set(emails).size, emails.length);
+
+let namesOk = true;
+for (const e of ROSTER) {
+  const firstName = e.fullName.split(/\s+/)[0];
+  if (e.displayName !== firstName) namesOk = false;
+}
+check("display name is always the first name", namesOk, true);
+
+let emailsOk = true;
+for (const e of ROSTER) {
+  const expected =
+    e.email.toLowerCase() === "adhambadraan@gmail.com"
+      ? "adhambadraan@gmail.com"
+      : `${e.displayName.toLowerCase()}@bcflights.com`;
+  if (e.email !== expected) emailsOk = false;
+}
+check("email follows firstname@bcflights.com (Adham = gmail)", emailsOk, true);
+
+const supervisors = ROSTER.filter((e) => e.role === "Supervisor");
+check("exactly 4 supervisors", supervisors.length, 4);
+check(
+  "supervisors are never duplicated as team members",
+  supervisors.every((s) => !ROSTER.some((e) => e !== s && e.email === s.email)),
+  true,
+);
 
 // ---------------------------------------------------------------------------
 // 2. Middleware & auth wiring (no /auth/login 404 regressions)
