@@ -6,7 +6,7 @@
   "description": "Team Breaks & Shift Management — Next.js + Auth0 + Prisma (live production)",
   "scripts": {
     "dev": "next dev",
-    "build": "allow-scripts run && node scripts/prisma.mjs generate && next build",
+    "build": "allow-scripts run && node scripts/prisma.mjs generate && node scripts/migrate-if-set.mjs && next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "audit:roles": "tsx scripts/audit-roles.ts",
