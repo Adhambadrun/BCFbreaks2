@@ -96,7 +96,7 @@ export default function AdminUsersTable({
                   <td className="px-6 py-2.5">
                     <span className="block font-medium text-zinc-100">
                       {u.name}
-                      {isSelf && <span className="ml-2 text-[10px] text-slate-500">(you)</span>}
+                      {isSelf && <span className="ml-2 text-[10px] text-zinc-500">(you)</span>}
                     </span>
                     <span className="block text-[10px] text-zinc-500">{u.email}</span>
                     {u.supervisedTeamName && (

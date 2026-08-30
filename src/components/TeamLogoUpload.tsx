@@ -56,7 +56,7 @@ export default function TeamLogoUpload({ teamId }: { teamId: string }) {
         type="button"
         disabled={busy}
         onClick={() => inputRef.current?.click()}
-        className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:bg-white/[0.08] disabled:opacity-60"
+        className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-zinc-200 transition hover:bg-white/[0.08] disabled:opacity-60"
       >
         {busy ? "Uploading..." : "Upload logo"}
       </button>
