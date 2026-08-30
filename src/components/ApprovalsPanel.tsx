@@ -50,7 +50,7 @@ export default function ApprovalsPanel({ items }: { items: ApprovalItem[] }) {
 
   if (items.length === 0) {
     return (
-      <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.06] p-5 text-sm text-emerald-200">
+      <div className="liquid-glass--thin p-5 text-sm text-green">
         ✓ No pending clarifications — the approvals queue is clear.
       </div>
     );
@@ -59,29 +59,26 @@ export default function ApprovalsPanel({ items }: { items: ApprovalItem[] }) {
   return (
     <div className="flex flex-col gap-3">
       {items.map((item) => (
-        <div
-          key={item.id}
-          className="rounded-2xl border border-amber-500/25 bg-amber-500/[0.06] p-4"
-        >
+        <div key={item.id} className="liquid-glass--thin border-gold/25 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <span className="text-sm font-bold text-white">{item.agentName}</span>
-              <span className="ml-2 font-mono text-[11px] text-slate-400">{item.agentEmail}</span>
+              <span className="ml-2 font-mono text-[11px] text-zinc-400">{item.agentEmail}</span>
               {item.teamName && (
-                <span className="ml-2 rounded-full border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-[10px] font-semibold text-sky-300">
+                <span className="ml-2 rounded-full border border-cyan/30 bg-cyan/10 px-2 py-0.5 font-display text-[9px] font-semibold uppercase tracking-wider text-cyan">
                   {item.teamName}
                 </span>
               )}
             </div>
-            <span className="rounded-full border border-rose-400/30 bg-rose-400/10 px-2.5 py-0.5 text-[11px] font-bold text-rose-300">
+            <span className="glow-crimson rounded-full border border-rose-400/30 bg-rose-400/10 px-2.5 py-0.5 font-display text-[10px] font-bold uppercase tracking-wider text-rose-300">
               {item.lateMinutes} min late
             </span>
           </div>
 
-          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-400">
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-zinc-400">
             <span>
               Clocked in:{" "}
-              <span className="font-mono text-slate-300">
+              <span className="font-mono text-zinc-300">
                 {new Date(item.clockInIso).toLocaleString([], {
                   month: "short",
                   day: "numeric",
@@ -93,7 +90,7 @@ export default function ApprovalsPanel({ items }: { items: ApprovalItem[] }) {
             {item.scheduledStartIso && (
               <span>
                 Scheduled:{" "}
-                <span className="font-mono text-slate-300">
+                <span className="font-mono text-zinc-300">
                   {new Date(item.scheduledStartIso).toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit",
@@ -103,7 +100,7 @@ export default function ApprovalsPanel({ items }: { items: ApprovalItem[] }) {
             )}
             <span>
               Submitted:{" "}
-              <span className="font-mono text-slate-300">
+              <span className="font-mono text-zinc-300">
                 {new Date(item.submittedAtIso).toLocaleString([], {
                   month: "short",
                   day: "numeric",
@@ -114,7 +111,7 @@ export default function ApprovalsPanel({ items }: { items: ApprovalItem[] }) {
             </span>
           </div>
 
-          <p className="mt-3 whitespace-pre-wrap rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 text-xs leading-relaxed text-slate-200">
+          <p className="mt-3 whitespace-pre-wrap rounded-xl border border-white/[0.07] bg-black/30 p-3 text-xs leading-relaxed text-zinc-200">
             {item.message}
           </p>
 
@@ -123,20 +120,20 @@ export default function ApprovalsPanel({ items }: { items: ApprovalItem[] }) {
               value={notes[item.id] ?? ""}
               onChange={(e) => setNotes((prev) => ({ ...prev, [item.id]: e.target.value }))}
               placeholder="Reviewer note (optional)…"
-              className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-200 focus:border-amber-400 focus:outline-none"
+              className="flex-1 rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-zinc-200 transition-colors focus:border-gold/60 focus:outline-none"
             />
             <div className="flex gap-2">
               <button
                 onClick={() => decide(item.id, "APPROVE")}
                 disabled={busyId === item.id}
-                className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-500 disabled:bg-slate-700"
+                className="rounded-xl bg-gradient-to-r from-green to-emerald-500 px-4 py-2 font-display text-[10px] font-black uppercase tracking-wider text-black shadow-[0_0_20px_rgba(0,255,136,0.25)] transition hover:brightness-110 disabled:opacity-50 disabled:shadow-none"
               >
                 {busyId === item.id ? "…" : "Approve — clear flag"}
               </button>
               <button
                 onClick={() => decide(item.id, "DECLINE")}
                 disabled={busyId === item.id}
-                className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-rose-500 disabled:bg-slate-700"
+                className="rounded-xl bg-gradient-to-r from-crimson to-rose-500 px-4 py-2 font-display text-[10px] font-black uppercase tracking-wider text-white shadow-[0_0_20px_rgba(255,0,60,0.25)] transition hover:brightness-110 disabled:opacity-50 disabled:shadow-none"
               >
                 {busyId === item.id ? "…" : "Decline — warn"}
               </button>

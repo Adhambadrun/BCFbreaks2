@@ -75,10 +75,12 @@ export default function EmailTemplateDispatcher({
   const rules = REQUEST_POLICY[selectedKey].rules;
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col gap-4 text-white">
+    <div className="liquid-glass--thin flex flex-col gap-4 p-6 text-white">
       <div className="flex justify-between items-center">
-        <h3 className="font-bold text-sm">📧 In-App Email Dispatcher</h3>
-        <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2.5 py-1 rounded-full border border-blue-500/30">
+        <h3 className="font-display text-sm font-bold uppercase tracking-widest text-zinc-100">
+          📧 In-App Email Dispatcher
+        </h3>
+        <span className="rounded-full border border-cyan/30 bg-cyan/10 px-2.5 py-1 font-display text-[9px] font-bold uppercase tracking-wider text-cyan">
           To: {ATTENDANCE_MAILBOX}
         </span>
       </div>
@@ -88,10 +90,10 @@ export default function EmailTemplateDispatcher({
           <button
             key={k}
             onClick={() => handleTemplateChange(k)}
-            className={`text-xs py-2 px-3 rounded-xl font-medium border transition-all ${
+            className={`font-display text-[10px] py-2 px-3 rounded-xl font-bold uppercase tracking-wider border transition-all ${
               selectedKey === k
-                ? "bg-blue-600 border-blue-400 text-white"
-                : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
+                ? "border-gold/60 bg-gold/20 text-gold shadow-[0_0_18px_rgba(255,204,0,0.25)]"
+                : "border-white/10 bg-black/30 text-zinc-400 hover:text-zinc-100 hover:border-white/20"
             }`}
           >
             {k.replace("_", " ")}
@@ -99,12 +101,12 @@ export default function EmailTemplateDispatcher({
         ))}
       </div>
 
-      <ul className="flex flex-col gap-1 rounded-xl border border-slate-800 bg-slate-950/60 p-3">
-        <li className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+      <ul className="flex flex-col gap-1 rounded-xl border border-white/[0.07] bg-black/30 p-3">
+        <li className="font-display text-[9px] font-bold uppercase tracking-widest text-zinc-500">
           {REQUEST_POLICY[selectedKey].label} — Policy Rules
         </li>
         {rules.map((rule) => (
-          <li key={rule} className="text-[11px] leading-relaxed text-slate-400">
+          <li key={rule} className="text-[11px] leading-relaxed text-zinc-400">
             • {rule}
           </li>
         ))}
@@ -113,18 +115,18 @@ export default function EmailTemplateDispatcher({
       <textarea
         value={emailBody}
         onChange={(e) => setEmailBody(e.target.value)}
-        className="w-full h-40 bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-blue-500"
+        className="h-40 w-full rounded-xl border border-white/[0.08] bg-black/40 p-3 font-mono text-xs text-zinc-200 transition-colors focus:border-cyan/50 focus:outline-none"
       />
 
       <button
         onClick={handleSendEmail}
         disabled={sending}
-        className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 text-white font-semibold text-xs py-3 rounded-xl transition-all"
+        className="rounded-xl bg-gradient-to-r from-green to-emerald-500 py-3 font-display text-xs font-black uppercase tracking-widest text-black shadow-[0_0_25px_rgba(0,255,136,0.3)] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
       >
         {sending ? "Sending Email..." : "Send Request Email Now"}
       </button>
 
-      {status && <p className="text-xs text-center">{status}</p>}
+      {status && <p className="text-xs text-center text-zinc-300">{status}</p>}
     </div>
   );
 }
