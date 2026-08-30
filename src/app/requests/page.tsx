@@ -42,12 +42,12 @@ export default async function RequestsPage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-black">
       <ShaderBackground />
-      <div className="pointer-events-none absolute -right-32 top-24 h-80 w-80 rounded-full bg-green/10 blur-3xl" />
-      <div className="pointer-events-none absolute -left-32 bottom-1/4 h-72 w-72 rounded-full bg-cyan/10 blur-3xl" />
+      <div className="pointer-events-none absolute -right-32 top-24 h-80 w-80 rounded-full bg-gold/[0.08] blur-3xl" />
+      <div className="pointer-events-none absolute -left-32 bottom-1/4 h-72 w-72 rounded-full bg-gold/[0.08] blur-3xl" />
       <NavBar user={user} impersonating={impersonating} />
 
       <main className="relative z-10 mx-auto max-w-3xl px-6 py-10">
-        <h1 className="bg-gradient-to-r from-green via-emerald-200 to-green bg-clip-text font-display text-xl font-black tracking-wide text-transparent">
+        <h1 className="bg-gradient-to-r from-gold via-amber-200 to-gold bg-clip-text font-display text-xl font-black tracking-wide text-transparent">
           Requests &amp; Email Dispatcher
         </h1>
         <p className="mt-1 text-sm text-zinc-400">

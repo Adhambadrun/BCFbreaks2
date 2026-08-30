@@ -4,10 +4,10 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    // Browser tab title — "BCF Time Management" is the base title on every
+    // Browser tab title — "Time Management" is the base title on every
     // route (nested pages inherit the template if they ever set their own).
-    default: "BCF Time Management",
-    template: "%s — BCF Time Management",
+    default: "Time Management",
+    template: "%s — Time Management",
   },
   description: "Live production team break, attendance and shift management system",
   icons: {

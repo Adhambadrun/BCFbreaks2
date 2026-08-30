@@ -30,7 +30,7 @@ export default function AccessGate({
         {showLoginCta && (
           <a
             href="/api/auth/login"
-            className="mt-2 inline-block rounded-2xl bg-gradient-to-r from-gold to-amber-500 px-6 py-3 font-display text-[13px] font-bold uppercase tracking-widest text-black shadow-[0_0_25px_rgba(255,204,0,0.35)] transition-all duration-200 hover:shadow-[0_0_40px_rgba(255,204,0,0.55)] hover:brightness-110"
+            className="mt-2 inline-block rounded-2xl bg-gradient-to-r from-gold to-amber-500 px-6 py-3 font-display text-[13px] font-bold uppercase tracking-widest text-black shadow-[0_0_25px_rgba(217,167,73,0.4)] transition-all duration-200 hover:shadow-[0_0_40px_rgba(217,167,73,0.6)] hover:brightness-110"
           >
             Sign in with Auth0
           </a>
@@ -44,7 +44,7 @@ export default function AccessGate({
           </Link>
         )}
 
-        <blockquote className="mt-4 w-full max-w-md rounded-2xl border border-gold/30 bg-gradient-to-br from-gold/[0.08] to-transparent p-4 shadow-[0_0_30px_rgba(255,204,0,0.12)]">
+        <blockquote className="mt-4 w-full max-w-md rounded-2xl border border-gold/30 bg-gradient-to-br from-gold/[0.08] to-transparent p-4 shadow-[0_0_30px_rgba(217,167,73,0.14)]">
           <p className="text-[13px] italic leading-relaxed text-amber-100/90">
             &ldquo;Time is more valuable than money. You can get more money, but you cannot get
             more time.&rdquo;

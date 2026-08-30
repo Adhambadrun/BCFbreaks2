@@ -83,9 +83,9 @@ export default async function Home() {
     <div className="relative min-h-screen overflow-hidden bg-black">
       <ShaderBackground />
 
-      {/* Brand light leaks — crimson / cyan / gold edge blooms over the shader */}
-      <div className="pointer-events-none absolute -left-32 top-24 h-72 w-72 rounded-full bg-crimson/15 blur-3xl" />
-      <div className="pointer-events-none absolute -right-32 top-1/3 h-80 w-80 rounded-full bg-cyan/10 blur-3xl" />
+      {/* Brand light leaks — logo gold / amber edge blooms over the shader */}
+      <div className="pointer-events-none absolute -left-32 top-24 h-72 w-72 rounded-full bg-gold/[0.12] blur-3xl" />
+      <div className="pointer-events-none absolute -right-32 top-1/3 h-80 w-80 rounded-full bg-gold/[0.08] blur-3xl" />
       <div className="pointer-events-none absolute left-1/2 top-0 h-[300px] w-[600px] -translate-x-1/2 rounded-full bg-gold/[0.07] blur-3xl md:h-[420px] md:w-[860px]" />
 
       <NavBar user={user} impersonating={impersonating} pendingApprovals={pendingApprovals} />
@@ -277,10 +277,7 @@ export default async function Home() {
             </div>
           )}
 
-          <p className="mt-6 text-center text-[11px] text-zinc-600">
-            BCF Breaks Console — live production system. Login and logout timestamps are recorded
-            automatically.
-          </p>
+          <p className="mt-6 text-center text-[11px] text-zinc-600">Time Management</p>
         </div>
       </main>
     </div>
