@@ -1,6 +1,6 @@
 # 🚨 PERMANENT AGENT INSTRUCTIONS & SYSTEM ARCHITECTURE DIRECTIVE 🚨
 
-This document defines the non-negotiable standards, UI contracts, and structural guidelines for the BCF Time Management system. Any AI agent, LLM assistant, or developer working on this codebase MUST strictly follow these rules.
+This document defines the non-negotiable standards, UI contracts, and structural guidelines for the Time Management system. Any AI agent, LLM assistant, or developer working on this codebase MUST strictly follow these rules.
 
 ---
 
@@ -19,7 +19,9 @@ This document defines the non-negotiable standards, UI contracts, and structural
 ---
 
 ## 3. METADATA, BROWSER TAB & LOGIN QUOTE
-- **Browser Tab Title:** The web app tab title MUST always display `"BCF Time Management"`. Set this as the default title in `src/app/layout.tsx` or `index.html`.
+- **Brand Wordmark:** The only text beside the logo (navbar) MUST be `"Time Management"` — no "BCFBreaks", "CONSOLE", or extra taglines.
+- **Browser Tab Title:** The web app tab title MUST always display `"Time Management"`. Set this as the default title in `src/app/layout.tsx` or `index.html`.
+- **Logo Color Plate:** The app palette follows the official BCF logo (black + metallic gold ≈ `#d9a749`). Brand accents (wordmark, glows, light leaks, shader) use this gold — never regress to crimson/cyan brand gradients.
 - **Login Page Quote:** The Login / Access Verification UI component MUST display the following quote:
   > *"Time is more valuable than money. You can get more money, but you cannot get more time."* — **Jim Rohn**
 

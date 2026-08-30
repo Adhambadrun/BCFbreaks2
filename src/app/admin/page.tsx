@@ -37,11 +37,11 @@ export default async function AdminPage() {
     <div className="relative min-h-screen overflow-hidden bg-black">
       <ShaderBackground />
       <div className="pointer-events-none absolute -left-32 top-24 h-72 w-72 rounded-full bg-gold/10 blur-3xl" />
-      <div className="pointer-events-none absolute -right-32 top-1/3 h-80 w-80 rounded-full bg-crimson/10 blur-3xl" />
+      <div className="pointer-events-none absolute -right-32 top-1/3 h-80 w-80 rounded-full bg-gold/[0.08] blur-3xl" />
       <NavBar user={user} impersonating={impersonating} />
 
       <main className="relative z-10 mx-auto max-w-6xl px-6 py-10">
-        <h1 className="bg-gradient-to-r from-crimson via-rose-200 to-gold bg-clip-text font-display text-xl font-black tracking-wide text-transparent">
+        <h1 className="bg-gradient-to-r from-gold via-amber-200 to-gold bg-clip-text font-display text-xl font-black tracking-wide text-transparent">
           System Administration
         </h1>
         <p className="mt-1 text-sm text-zinc-400">

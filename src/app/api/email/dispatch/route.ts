@@ -75,11 +75,11 @@ export async function POST(request: NextRequest) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: process.env.RESEND_FROM ?? "BCFBreaks <onboarding@resend.dev>",
+          from: process.env.RESEND_FROM ?? "Time Management <onboarding@resend.dev>",
           to: [to],
           reply_to: from,
           subject: `${subject} — ${user.name} <${from}>`,
-          text: `${body}\n\n—\nSent from BCFbreaks by ${user.name} <${from}>\n`,
+          text: `${body}\n\n—\nSent from Time Management by ${user.name} <${from}>\n`,
         }),
       });
       delivered = res.ok;

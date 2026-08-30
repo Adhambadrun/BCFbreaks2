@@ -83,7 +83,7 @@ export default async function ApprovalsPage() {
     <div className="relative min-h-screen overflow-hidden bg-black">
       <ShaderBackground />
       <div className="pointer-events-none absolute -left-32 top-24 h-72 w-72 rounded-full bg-gold/10 blur-3xl" />
-      <div className="pointer-events-none absolute -right-32 bottom-1/4 h-80 w-80 rounded-full bg-crimson/10 blur-3xl" />
+      <div className="pointer-events-none absolute -right-32 bottom-1/4 h-80 w-80 rounded-full bg-gold/[0.08] blur-3xl" />
       <NavBar user={user} impersonating={impersonating} pendingApprovals={pending.length} />
 
       <main className="relative z-10 mx-auto max-w-4xl px-6 py-10">

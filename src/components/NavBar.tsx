@@ -58,13 +58,10 @@ export default async function NavBar({
         <Link href="/" className="group flex items-center gap-2.5">
           <BrandLogo
             size={34}
-            className="ring-1 ring-gold/40 transition-shadow duration-300 group-hover:ring-gold/70 group-hover:shadow-[0_0_22px_rgba(255,204,0,0.35)]"
+            className="ring-1 ring-gold/40 transition-shadow duration-300 group-hover:ring-gold/70 group-hover:shadow-[0_0_22px_rgba(217,167,73,0.4)]"
           />
           <span className="bg-gradient-to-r from-gold via-amber-200 to-gold bg-clip-text font-display text-[15px] font-black tracking-wide text-transparent">
-            BCFBreaks
-          </span>
-          <span className="hidden bg-gradient-to-r from-zinc-300 via-zinc-500 to-zinc-300 bg-clip-text font-display text-[9px] font-semibold uppercase tracking-[0.32em] text-transparent sm:inline">
-            CONSOLE
+            Time Management
           </span>
         </Link>
 

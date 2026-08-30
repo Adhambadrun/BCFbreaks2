@@ -5,7 +5,8 @@ import { useEffect, useRef } from "react";
 /**
  * Obsidian smoke shader background — the signature visual from the uploaded
  * prototype (root Design.html / ShaderBackground.tsx): deep-black drifting
- * smoke with crimson/cyan light leaks and gold embers, rendered via WebGL.
+ * smoke with gold/amber light leaks and gold embers (matching the official
+ * BCF logo's black-on-gold plate), rendered via WebGL.
  *
  * Pure decoration: pointer-events-none, aria-hidden, fixed behind app content
  * (content layers must carry a relative z-index above it). Respects
@@ -101,8 +102,8 @@ void main() {
     float light1 = smoothstep(0.8, 1.2, n + uv.x);
     float light2 = smoothstep(0.8, 1.2, n + (1.0 - uv.y));
 
-    color += light1 * vec3(0.1, 0.0, 0.02); // Crimson hint
-    color += light2 * vec3(0.0, 0.05, 0.08); // Cyan hint
+    color += light1 * vec3(0.14, 0.09, 0.02); // Gold hint
+    color += light2 * vec3(0.1, 0.07, 0.02); // Amber hint
 
     float embers = pow(fract(n * 10.0 + u_time * 0.1), 20.0);
     color += embers * vec3(0.3, 0.2, 0.1) * 0.5; // Gold embers
