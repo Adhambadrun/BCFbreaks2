@@ -1,10 +1,10 @@
 const PALETTE = [
-  "bg-blue-500/20 text-blue-300",
-  "bg-emerald-500/20 text-emerald-300",
-  "bg-violet-500/20 text-violet-300",
+  "bg-cyan/20 text-cyan-200",
+  "bg-green/20 text-green",
+  "bg-gold/20 text-gold",
   "bg-amber-500/20 text-amber-300",
-  "bg-rose-500/20 text-rose-300",
-  "bg-cyan-500/20 text-cyan-300",
+  "bg-crimson/20 text-rose-300",
+  "bg-cyan/20 text-cyan-200",
 ];
 
 function initialsFor(name: string, email: string): string {

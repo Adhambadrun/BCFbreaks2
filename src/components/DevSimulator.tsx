@@ -68,12 +68,12 @@ function DevSimulatorInner({
   }
 
   return (
-    <div className="my-4 w-full rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
+    <div className="liquid-glass--thin my-4 w-full border-gold/30 p-4">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
+        <span className="font-display text-[10px] font-bold uppercase tracking-widest text-gold">
           🛠️ Developer Control Panel
         </span>
-        <span className="rounded bg-amber-500/20 px-2 py-0.5 font-mono text-[10px] text-amber-300">
+        <span className="rounded bg-gold/20 px-2 py-0.5 font-mono text-[10px] text-gold">
           User Impersonation Engine
         </span>
       </div>
@@ -86,7 +86,7 @@ function DevSimulatorInner({
           <button
             onClick={onStop}
             disabled={busy || pending}
-            className="rounded-xl border border-amber-500/40 bg-amber-500/20 px-3 py-2 text-xs font-semibold text-amber-200 transition hover:bg-amber-500/30 disabled:opacity-50"
+            className="rounded-xl border border-gold/40 bg-gold/20 px-3 py-2 font-display text-[10px] font-bold uppercase tracking-wider text-gold transition hover:bg-gold/30 disabled:opacity-50"
           >
             {busy || pending ? "Switching..." : "Stop Impersonating"}
           </button>
@@ -97,7 +97,7 @@ function DevSimulatorInner({
             value=""
             onChange={(e) => onSimulate(e.target.value)}
             disabled={busy || pending}
-            className="flex-1 rounded-xl border border-white/10 bg-slate-900 p-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50"
+            className="flex-1 rounded-xl border border-white/10 bg-black/40 p-2.5 text-xs text-zinc-100 focus:outline-none focus:ring-2 focus:ring-gold/60 disabled:opacity-50"
           >
             <option value="">
               {busy || pending

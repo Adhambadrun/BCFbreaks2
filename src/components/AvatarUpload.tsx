@@ -56,7 +56,7 @@ export default function AvatarUpload() {
         type="button"
         disabled={busy}
         onClick={() => inputRef.current?.click()}
-        className="w-full rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-[13px] font-medium text-slate-200 transition hover:bg-white/[0.08] disabled:opacity-60"
+        className="w-full rounded-2xl border border-gold/25 bg-gold/[0.08] px-4 py-2.5 font-display text-[10px] font-bold uppercase tracking-widest text-gold transition hover:bg-gold/20 hover:shadow-[0_0_18px_rgba(255,204,0,0.2)] disabled:opacity-60"
       >
         {busy ? "Uploading..." : "📷 Upload Profile Picture"}
       </button>
