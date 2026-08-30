@@ -20,7 +20,7 @@ export interface TeamCardData {
 function ShiftStatus({ clockInIso }: { clockInIso: string | null }) {
   if (!clockInIso) {
     return (
-      <span className="rounded-full border border-slate-500/20 bg-slate-500/10 px-2 py-0.5 text-[10px] font-semibold text-slate-400">
+      <span className="rounded-full border border-zinc-500/20 bg-zinc-500/10 px-2 py-0.5 text-[10px] font-semibold text-zinc-400">
         Off shift
       </span>
     );
@@ -44,7 +44,7 @@ export default function TeamCard({
   const onShiftCount = team.members.filter((m) => m.onShiftClockIn).length;
 
   return (
-    <section className="flex flex-col gap-4 rounded-3xl border border-white/[0.08] bg-white/[0.04] p-6 shadow-xl backdrop-blur-2xl">
+    <section className="liquid-glass--thick flex flex-col gap-4 p-6">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           {team.logoUrl ? (
@@ -55,13 +55,13 @@ export default function TeamCard({
               className="h-12 w-12 rounded-2xl border border-white/10 object-cover"
             />
           ) : (
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-br from-indigo-500/30 to-blue-500/30 text-lg font-black text-white">
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan/30 bg-gradient-to-br from-cyan/30 to-cyan/10 text-lg font-black text-cyan-100">
               {team.name.charAt(0).toUpperCase()}
             </span>
           )}
           <div>
-            <h2 className="text-lg font-bold text-white">{team.name}</h2>
-            <p className="text-[11px] text-slate-400">
+            <h2 className="font-display text-lg font-black tracking-wide text-white">{team.name}</h2>
+            <p className="text-[11px] text-zinc-400">
               {onShiftCount}/{team.members.length} on shift
               {team.supervisor ? ` · Supervisor: ${team.supervisor.name}` : " · Supervisor: N/A"}
             </p>
@@ -74,15 +74,15 @@ export default function TeamCard({
         {team.members.map((m) => (
           <li
             key={m.id}
-            className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.04] bg-white/[0.02] px-3 py-2"
+            className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.05] bg-white/[0.02] px-3 py-2"
           >
             <span className="flex min-w-0 items-center gap-2.5">
               <Avatar name={m.name} email={m.email} avatarUrl={m.avatarUrl} size={30} />
               <span className="min-w-0">
-                <span className="block truncate text-[13px] font-medium text-slate-100">
+                <span className="block truncate text-[13px] font-medium text-zinc-100">
                   {m.name}
                 </span>
-                <span className="block truncate text-[10px] text-slate-500">{m.email}</span>
+                <span className="block truncate text-[10px] text-zinc-500">{m.email}</span>
               </span>
             </span>
             <span className="flex shrink-0 items-center gap-2">
@@ -92,7 +92,7 @@ export default function TeamCard({
           </li>
         ))}
         {team.members.length === 0 && (
-          <li className="rounded-xl border border-dashed border-white/10 px-3 py-4 text-center text-xs text-slate-500">
+          <li className="rounded-xl border border-dashed border-white/10 px-3 py-4 text-center text-xs text-zinc-500">
             No members yet.
           </li>
         )}
