@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 export interface AdminUserRow {
   id: string;
   name: string;
+  fullName: string | null;
   email: string;
   role: string;
   teamId: string | null;
@@ -13,7 +14,7 @@ export interface AdminUserRow {
   supervisedTeamName: string | null;
 }
 
-const ROLE_OPTIONS = ["DEV", "ADMIN", "SUPERVISOR", "AGENT", "PREVIEWER"];
+const ROLE_OPTIONS = ["DEV", "ADMIN", "SUPERVISOR", "INDEPENDENT", "AGENT", "PREVIEWER"];
 
 export default function AdminUsersTable({
   users,
@@ -98,6 +99,9 @@ export default function AdminUsersTable({
                       {u.name}
                       {isSelf && <span className="ml-2 text-[10px] text-zinc-500">(you)</span>}
                     </span>
+                    {u.fullName && u.fullName !== u.name && (
+                      <span className="block text-[11px] text-zinc-400">{u.fullName}</span>
+                    )}
                     <span className="block text-[10px] text-zinc-500">{u.email}</span>
                     {u.supervisedTeamName && (
                       <span className="block text-[10px] text-cyan-300/80">

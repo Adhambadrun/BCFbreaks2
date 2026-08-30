@@ -3,7 +3,13 @@ import type { Team, User } from "@/generated/prisma/client";
 import { prisma } from "./db";
 import { auth0 } from "./auth0";
 import { readImpersonationCookie } from "./impersonation";
-import { defaultNameForEmail, getRoleForEmail, normalizeEmail } from "./permissions";
+import {
+  defaultNameForEmail,
+  displayNameForEmail,
+  fullNameForEmail,
+  getRoleForEmail,
+  normalizeEmail,
+} from "./permissions";
 
 /**
  * Session -> database user resolution (server-only).
@@ -34,10 +40,14 @@ async function ensureDbUser(sessionUser: SessionUserInfo): Promise<UserWithTeam 
   if (existing) return existing as UserWithTeam;
 
   // First sign-in: provision the account with the role resolved by the engine.
+  // Roster members get their canonical display (first) name and full name;
+  // everyone else falls back to the Auth0 profile name or the email local-part.
+  const fallbackName = sessionUser.name?.trim() || defaultNameForEmail(clean);
   const created = await prisma.user.create({
     data: {
       email: clean,
-      name: sessionUser.name?.trim() || defaultNameForEmail(clean),
+      name: displayNameForEmail(clean) ?? fallbackName,
+      fullName: fullNameForEmail(clean) ?? fallbackName,
       role: getRoleForEmail(clean),
     },
   });

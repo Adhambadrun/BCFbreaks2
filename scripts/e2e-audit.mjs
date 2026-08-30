@@ -112,8 +112,8 @@ async function main() {
   const devUser = (await q(`SELECT id FROM "User" WHERE email='adhambadraan@gmail.com'`)).rows[0];
   const agentUser = (await q(`SELECT id FROM "User" WHERE email='lamar@bcflights.com'`)).rows[0];
   const albert = (await q(`SELECT id FROM "User" WHERE email='albert@bcflights.com'`)).rows[0];
-  const strikers = (await q(`SELECT id FROM "Team" WHERE name='Strikers'`)).rows[0];
-  check("seeded roster present in DB", Boolean(devUser && agentUser && albert && strikers));
+  const cai2 = (await q(`SELECT id FROM "Team" WHERE name='CAI 2'`)).rows[0];
+  check("seeded roster present in DB", Boolean(devUser && agentUser && albert && cai2));
 
   // ---------------------------------------------------------------------- 
   console.log("\n== 1. Zero-trust middleware (unauthenticated) ==");
@@ -146,14 +146,14 @@ async function main() {
   // ----------------------------------------------------------------------
   console.log("\n== 3. Team views (role scoping) ==");
   const agentTeam = await get("/team", agent);
-  check("AGENT sees own team Strikers", agentTeam.status === 200 && agentTeam.body.includes("Strikers"));
-  check("AGENT cannot see Wizards roster", !agentTeam.body.includes("Watkins"));
+  check("AGENT sees own team CAI 2", agentTeam.status === 200 && agentTeam.body.includes("CAI 2"));
+  check("AGENT cannot see CAI 4 roster", !agentTeam.body.includes("Watkins"));
 
   const supTeam = await get("/team", supervisor);
-  check("SUPERVISOR sees Strikers", supTeam.status === 200 && supTeam.body.includes("Strikers"));
+  check("SUPERVISOR sees CAI 2", supTeam.status === 200 && supTeam.body.includes("CAI 2"));
 
   const adminTeam = await get("/team", admin);
-  check("ADMIN sees all teams", adminTeam.status === 200 && adminTeam.body.includes("Strikers") && adminTeam.body.includes("Wizards"));
+  check("ADMIN sees all teams", adminTeam.status === 200 && adminTeam.body.includes("CAI 2") && adminTeam.body.includes("CAI 4"));
 
   const agentAdmin = await get("/admin", agent);
   check("AGENT denied /admin (redirected)", agentAdmin.status === 307 && agentAdmin.location.endsWith("/"), `status=${agentAdmin.status}`);
@@ -184,7 +184,7 @@ async function main() {
     [COOKIE, dev],
     ["bcf_impersonation", impCookie],
   ]);
-  check("team view follows impersonated agent (Strikers, read-only)", impTeam.status === 200 && impTeam.body.includes("Strikers"));
+  check("team view follows impersonated agent (CAI 2, read-only)", impTeam.status === 200 && impTeam.body.includes("CAI 2"));
 
   const stop = await postJson("/api/dev/impersonate", dev, undefined, "DELETE");
   check("DEV can stop impersonation", stop.status === 200, stop.body);
@@ -213,12 +213,12 @@ async function main() {
   const avatarInDb = (await q(`SELECT "avatarUrl" FROM "User" WHERE id=$1`, [agentUser.id])).rows[0].avatarUrl;
   check("avatarUrl persisted in DB", avatarInDb === avBody.avatarUrl, avatarInDb);
 
-  const logoDenied = await postFile(`/api/teams/${strikers.id}/logo`, agent, PNG_1x1);
+  const logoDenied = await postFile(`/api/teams/${cai2.id}/logo`, agent, PNG_1x1);
   check("AGENT forbidden to upload team logo", logoDenied.status === 403);
-  const logo = await postFile(`/api/teams/${strikers.id}/logo`, dev, PNG_1x1, "logo.png");
+  const logo = await postFile(`/api/teams/${cai2.id}/logo`, dev, PNG_1x1, "logo.png");
   const logoBody = JSON.parse(logo.body.startsWith("{") ? logo.body : "{}");
   check("DEV/manager can upload team logo", logo.status === 200 && logoBody.logoUrl, logo.body);
-  const logoInDb = (await q(`SELECT "logoUrl" FROM "Team" WHERE id=$1`, [strikers.id])).rows[0].logoUrl;
+  const logoInDb = (await q(`SELECT "logoUrl" FROM "Team" WHERE id=$1`, [cai2.id])).rows[0].logoUrl;
   check("team logoUrl persisted in DB", logoInDb === logoBody.logoUrl, logoInDb);
 
   // ----------------------------------------------------------------------
@@ -228,20 +228,29 @@ async function main() {
 
   const promote = await postJson(`/api/admin/users/${agentUser.id}`, admin, { role: "SUPERVISOR", teamId: null }, "PATCH");
   check("ADMIN can change roles", promote.status === 200, promote.body);
-  const adminTeams = await postJson("/api/admin/teams", admin, { name: "Titans", supervisorId: albert.id });
-  check("ADMIN can create team + assign supervisor", adminTeams.status === 200, adminTeams.body);
+  const adminTeams = await postJson("/api/admin/teams", admin, { name: "Titans" });
+  check("ADMIN can create a team", adminTeams.status === 200, adminTeams.body);
+  const titansId = (() => {
+    try { return JSON.parse(adminTeams.body).team.id; } catch { return null; }
+  })();
+  const reassign = await postJson(`/api/admin/users/${albert.id}`, admin, { role: "SUPERVISOR", teamId: titansId }, "PATCH");
+  check("ADMIN can (re)assign a supervisor to a team", reassign.status === 200, reassign.body);
   const albertTeam = (await q(
     `SELECT t.name FROM "Team" t WHERE t."supervisorId"=$1`,
     [albert.id],
   )).rows[0]?.name;
-  check("Albert now supervises Titans (pending assignment resolved)", albertTeam === "Titans", String(albertTeam));
+  check("Albert now supervises Titans", albertTeam === "Titans", String(albertTeam));
 
-  // revert to spec state
-  await q(`UPDATE "User" SET role='AGENT', "teamId"=(SELECT id FROM "Team" WHERE name='Strikers') WHERE id=$1`, [agentUser.id]);
-  await q(`UPDATE "User" SET "teamId"=NULL WHERE id=$1`, [albert.id]);
+  // revert to spec state (Albert back on CAI 3, Lamar back to AGENT on CAI 2)
   await q(`DELETE FROM "Team" WHERE name='Titans'`);
-  const albertReset = (await q(`SELECT "teamId" FROM "User" WHERE id=$1`, [albert.id])).rows[0].teamId;
-  check("state reverted to spec (Albert pending again)", albertReset === null);
+  await q(`UPDATE "Team" SET "supervisorId"=$1 WHERE name='CAI 3'`, [albert.id]);
+  await q(`UPDATE "User" SET "teamId"=(SELECT id FROM "Team" WHERE name='CAI 3') WHERE id=$1`, [albert.id]);
+  await q(`UPDATE "User" SET role='AGENT', "teamId"=(SELECT id FROM "Team" WHERE name='CAI 2') WHERE id=$1`, [agentUser.id]);
+  const albertReset = (await q(
+    `SELECT t.name FROM "Team" t WHERE t."supervisorId"=$1`,
+    [albert.id],
+  )).rows[0]?.name;
+  check("state reverted to spec (Albert supervises CAI 3 again)", albertReset === "CAI 3", String(albertReset));
 
   // ----------------------------------------------------------------------
   console.log("\n== 8. 15-minute latency engine, clarifications & warnings (live) ==");
@@ -373,7 +382,7 @@ async function main() {
   // ----------------------------------------------------------------------
   console.log("\n== 11. Cleanup test artifacts ==");
   await q(`UPDATE "User" SET "avatarUrl"=NULL WHERE id=$1`, [agentUser.id]);
-  await q(`UPDATE "Team" SET "logoUrl"=NULL WHERE id=$1`, [strikers.id]);
+  await q(`UPDATE "Team" SET "logoUrl"=NULL WHERE id=$1`, [cai2.id]);
   await q(`DELETE FROM "Asset"`);
   await q(`DELETE FROM "ClarificationRequest"`);
   await q(`DELETE FROM "Warning"`);

@@ -23,6 +23,7 @@ enum Role {
   DEV
   ADMIN
   SUPERVISOR
+  INDEPENDENT
   AGENT
   PREVIEWER
 }
@@ -30,7 +31,10 @@ enum Role {
 model User {
   id             String       @id @default(uuid())
   email          String       @unique
+  /// Display name (first name) — e.g. "Meredith".
   name           String
+  /// Full name from the canonical roster — e.g. "Meredith Devereux".
+  fullName       String?
   avatarUrl      String?
   role           Role         @default(AGENT)
   teamId         String?

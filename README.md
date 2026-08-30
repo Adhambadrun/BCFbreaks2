@@ -30,21 +30,24 @@ Built with **Next.js 15 (App Router) + Auth0 (nextjs-auth0 v4) + Prisma 7 (Postg
 
 ## Role matrix (verified by `npm run audit:roles`)
 
+The canonical company roster lives in `src/lib/roster.ts` (47 people) and is the
+single source of truth for the role engine, the database seed and the audits.
+
 | Email | Role | Team |
 |---|---|---|
 | `adhambadraan@gmail.com` | DEV (full access + impersonation) | — |
 | `meredith@bcflights.com` | ADMIN | — |
 | `atlas@bcflights.com` | ADMIN | — |
-| `jolene@bcflights.com` | ADMIN | — |
-| `naomi@bcflights.com` | ADMIN | — |
-| `jay@bcflights.com` | SUPERVISOR | **Strikers** |
-| `watkins@bcflights.com` | SUPERVISOR | **Wizards** |
-| `albert@bcflights.com` | SUPERVISOR | *N/A — pending assignment (assign in `/admin`)* |
-| `amir@bcflights.com` | SUPERVISOR | *N/A — pending assignment (assign in `/admin`)* |
+| `dominick@bcflights.com` | INDEPENDENT (Independent Agent) | **CAI 1** |
+| `jay@bcflights.com` | SUPERVISOR | **CAI 2** |
+| `albert@bcflights.com` | SUPERVISOR | **CAI 3** |
+| `watkins@bcflights.com` | SUPERVISOR | **CAI 4** |
+| `amir@bcflights.com` | SUPERVISOR | **CAI 5** |
 | any other `*@bcflights.com` | AGENT (automatic domain rule) | assigned by admins |
 | any non-`@bcflights.com` | PREVIEWER (restricted) | — |
 
-Seeded Strikers agents: solomon, zayn, leo, lamar, fabiola, shay, wesley, eric, thomas.
+Team members are seeded onto their CAI teams (CAI 2–5), each led by its
+supervisor; CAI 1 holds the single Independent Agent with no supervisor.
 
 ---
 

@@ -10,7 +10,7 @@ import type { AppRole } from "@/lib/permissions";
  */
 export const dynamic = "force-dynamic";
 
-const ROLES: AppRole[] = ["DEV", "ADMIN", "SUPERVISOR", "AGENT", "PREVIEWER"];
+const ROLES: AppRole[] = ["DEV", "ADMIN", "SUPERVISOR", "INDEPENDENT", "AGENT", "PREVIEWER"];
 
 /**
  * PATCH /api/admin/users/[id] — change a user's role and/or team assignment.

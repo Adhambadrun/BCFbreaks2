@@ -71,6 +71,7 @@ export default async function AdminPage() {
           users={users.map((u) => ({
             id: u.id,
             name: u.name,
+            fullName: u.fullName ?? null,
             email: u.email,
             role: u.role,
             teamId: u.teamId,
