@@ -1,10 +1,13 @@
 import Link from "next/link";
+import { prisma } from "@/lib/db";
+import { getSessionUser } from "@/lib/session";
 import Avatar from "./Avatar";
 import BrandLogo from "./BrandLogo";
 import RoleBadge from "./RoleBadge";
+import SimulationBanner, { type UserOption } from "./SimulationBanner";
 import type { User } from "@/generated/prisma/client";
 
-export default function NavBar({
+export default async function NavBar({
   user,
   impersonating,
   pendingApprovals = 0,
@@ -13,6 +16,28 @@ export default function NavBar({
   impersonating: boolean;
   pendingApprovals?: number;
 }) {
+  // The REAL authenticated identity (never the impersonation target) — used to
+  // decide whether the Developer simulation controls are shown, and to fetch
+  // the switchable roster for the "Switch User" dropdown on every surface.
+  const real = await getSessionUser();
+  const isDeveloper = real?.role === "DEV";
+
+  let simUsers: UserOption[] = [];
+  if (isDeveloper) {
+    const rows = await prisma.user.findMany({
+      include: { team: true },
+      orderBy: [{ role: "asc" }, { name: "asc" }],
+    });
+    simUsers = rows.map((u) => ({
+      email: u.email,
+      name: u.name,
+      role: u.role,
+      team: u.team?.name ?? null,
+    }));
+  }
+
+  const showSimulationBanner = isDeveloper && impersonating;
+
   const canManage = user.role === "DEV" || user.role === "ADMIN";
   const isSupervisor = user.role === "SUPERVISOR";
   const seesApprovals =
@@ -20,7 +45,15 @@ export default function NavBar({
   const showTeamLink = user.role !== "PREVIEWER";
 
   return (
-    <header className="relative z-20 border-b border-white/[0.08] bg-black/40 backdrop-blur-2xl">
+    <>
+      {showSimulationBanner && (
+        <SimulationBanner impersonatingEmail={user.email} users={simUsers} />
+      )}
+      <header
+        className={`relative z-20 border-b border-white/[0.08] bg-black/40 backdrop-blur-2xl ${
+          showSimulationBanner ? "mt-14" : ""
+        }`}
+      >
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-3">
         <Link href="/" className="group flex items-center gap-2.5">
           <BrandLogo
@@ -30,8 +63,8 @@ export default function NavBar({
           <span className="bg-gradient-to-r from-gold via-amber-200 to-gold bg-clip-text font-display text-[15px] font-black tracking-wide text-transparent">
             BCFBreaks
           </span>
-          <span className="hidden font-display text-[9px] font-semibold uppercase tracking-[0.28em] text-zinc-500 sm:inline">
-            Console
+          <span className="hidden bg-gradient-to-r from-zinc-300 via-zinc-500 to-zinc-300 bg-clip-text font-display text-[9px] font-semibold uppercase tracking-[0.32em] text-transparent sm:inline">
+            CONSOLE
           </span>
         </Link>
 
@@ -92,5 +125,6 @@ export default function NavBar({
         </div>
       )}
     </header>
+    </>
   );
 }

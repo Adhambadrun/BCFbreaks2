@@ -88,7 +88,7 @@ export default async function Home() {
       <div className="pointer-events-none absolute -right-32 top-1/3 h-80 w-80 rounded-full bg-cyan/10 blur-3xl" />
       <div className="pointer-events-none absolute left-1/2 top-0 h-[300px] w-[600px] -translate-x-1/2 rounded-full bg-gold/[0.07] blur-3xl md:h-[420px] md:w-[860px]" />
 
-      <NavBar user={real} impersonating={impersonating} pendingApprovals={pendingApprovals} />
+      <NavBar user={user} impersonating={impersonating} pendingApprovals={pendingApprovals} />
 
       <main className="relative z-10 mx-auto flex max-w-6xl flex-col items-center px-6 py-12">
         <div className="w-full max-w-md">
